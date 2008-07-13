@@ -9,13 +9,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections.ObjectModel;
-
 namespace BurnSystems.Parser
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Collections.ObjectModel;
+
     /// <summary>
     /// This interface has to be implemented by all objects, which offer methods
     /// or properties to the parser
@@ -25,16 +25,16 @@ namespace BurnSystems.Parser
         /// <summary>
         /// This function returns a specific property, which is accessed by name
         /// </summary>
-        /// <param name="strName">Name of requested property</param>
-        /// <returns>Property</returns>
-        object GetProperty(String strName);
+        /// <param name="name">Name of requested property</param>
+        /// <returns>Property behind this object</returns>
+        object GetProperty(string name);
 
         /// <summary>
         /// This function has to execute a function and to return an object
         /// </summary>
-        /// <param name="strFunctionname">Name of function</param>
-        /// <param name="aParameter">Paramters</param>
+        /// <param name="functionName">Name of function</param>
+        /// <param name="parameters">Parameters for the function</param>
         /// <returns>Return of function</returns>
-        object ExecuteFunction(String strFunctionname, IList<object> aParameter);
+        object ExecuteFunction(string functionName, IList<object> parameters);
     }
 }

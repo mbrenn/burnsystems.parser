@@ -9,123 +9,850 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.Collections;
-using BurnSystems.Parser.Helper;
-using System.Globalization;
-
 namespace BurnSystems.Parser
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Reflection;
+    using System.Collections;
+    using BurnSystems.Parser.Helper;
+    using System.Globalization;
+
     /// <summary>
-    /// Expression parser
+    /// Expression parser, which evaluates simple expressions like '23+name'
     /// </summary>
     public class ExpressionParser
     {
-        #region Enumerations
+        /// <summary>
+        /// Priority value of brackets
+        /// </summary>
+        private const int BracketPriority = 20;
 
         /// <summary>
-        /// Operators
+        /// Dictionary of operators
         /// </summary>
-        enum Operator
+        private static Dictionary<string, Operator> operatorTable =
+            new Dictionary<string, Operator>();
+
+        /// <summary>
+        /// Templateparser, which is used for the expressionparser
+        /// </summary>
+        private TemplateParser core;
+
+        /// <summary> 
+        /// Current position of the cursor
+        /// </summary>
+        private int currentPosition;
+
+        /// <summary>
+        /// Current operator priority
+        /// </summary>
+        private int currentOperatorPriority;
+
+        /// <summary>
+        /// Operator stack
+        /// </summary>
+        private Stack<OperatorStructure> operatorStack = new Stack<OperatorStructure>();
+
+        /// <summary>
+        /// Expression statck
+        /// </summary>
+        private Stack<ExpressionStructure> expressionStack = new Stack<ExpressionStructure>();
+
+        /// <summary>
+        /// Flag, if debug is active
+        /// </summary>
+        private bool debugActive;
+
+        #region Static variables and methods
+
+        /// <summary>
+        /// Static constructor
+        /// </summary>
+        static ExpressionParser()
         {
+            operatorTable["+"] = Operator.Addition;
+            operatorTable["-"] = Operator.Subtraction;
+            operatorTable["*"] = Operator.Multiplication;
+            operatorTable["/"] = Operator.Division;
+            operatorTable["."] = Operator.Concatenation;
+            operatorTable["&"] = Operator.And;
+            operatorTable["|"] = Operator.Or;
+            operatorTable["^"] = Operator.Xor;
+            operatorTable["&&"] = Operator.LogicalAnd;
+            operatorTable["||"] = Operator.LogicalOr;
+            operatorTable["^^"] = Operator.LogicalXor;
+            operatorTable["!"] = Operator.LogicalNot;
+            operatorTable["->"] = Operator.Dereference;
+            operatorTable["=="] = Operator.Equal;
+            operatorTable["!="] = Operator.Inequal;
+            operatorTable[">"] = Operator.Greater;
+            operatorTable[">="] = Operator.GreaterOrEqual;
+            operatorTable["<"] = Operator.Less;
+            operatorTable["<="] = Operator.LessOrEqual;
+            operatorTable["!="] = Operator.Inequal;
+            operatorTable["<>"] = Operator.Inequal;
+        }
+
+        /// <summary>
+        /// Creates new expression parser
+        /// </summary>
+        /// <param name="core">Templateparser to be used</param>
+        public ExpressionParser(TemplateParser core)
+        {
+            this.core = core;
+        }
+
+        /// <summary>
+        /// Operators of the expressionparser
+        /// </summary>
+        private enum Operator
+        {
+            /// <summary>
+            /// Unknown operator
+            /// </summary>
             Unknown,
+
+            /// <summary>
+            /// Addition operator
+            /// </summary>
             Addition,
+
+            /// <summary>
+            /// Subtraction Operator
+            /// </summary>
             Subtraction,
+
+            /// <summary>
+            /// Multiplication operator
+            /// </summary>
             Multiplication,
+
+            /// <summary>
+            /// Division operator
+            /// </summary>
             Division,
+            
+            /// <summary>
+            /// Concatenation operator
+            /// </summary>
             Concatenation,
+
+            /// <summary>
+            /// Logical-And operator
+            /// </summary>
             LogicalAnd,
+
+            /// <summary>
+            /// Logical-Or operator
+            /// </summary>
             LogicalOr,
+
+            /// <summary>
+            /// Logical-Xor operator
+            /// </summary>
             LogicalXor,
+
+            /// <summary>
+            /// Logical-Not operator
+            /// </summary>
             LogicalNot,
+
+            /// <summary>
+            /// And operator
+            /// </summary>
             And,
+
+            /// <summary>
+            /// Or operator
+            /// </summary>
             Or,
+
+            /// <summary>
+            /// Xor operator
+            /// </summary>
             Xor,
+
+            /// <summary>
+            /// Dereference operator
+            /// </summary>
             Dereference,
+
+            /// <summary>
+            /// Equal operator
+            /// </summary>
             Equal,
+
+            /// <summary>
+            /// Greater operator
+            /// </summary>
             Greater,
+
+            /// <summary>
+            /// Greater or equal operator
+            /// </summary>
             GreaterOrEqual,
+
+            /// <summary>
+            /// Less operator
+            /// </summary>
             Less,
+
+            /// <summary>
+            /// Less or equal operator
+            /// </summary>
             LessOrEqual,
+
+            /// <summary>
+            /// Inequal operator
+            /// </summary>
             Inequal
         }
 
         /// <summary>
-        /// Type of the literal
+        /// Type of the literal, which is stored in the structure
         /// </summary>
-        enum LiteralType
+        private enum LiteralType
         {
+            /// <summary>
+            /// Unknown literal type
+            /// </summary>
             Unknown,
+
+            /// <summary>
+            /// Data stored is a booleam
+            /// </summary>
             Boolean,
+
+            /// <summary>
+            /// Data stored is an integer
+            /// </summary>
             Integer,
+
+            /// <summary>
+            /// Data stored is a string
+            /// </summary>
             String,
+
+            /// <summary>
+            /// Data stored is an object
+            /// </summary>
             Object,
+
+            /// <summary>
+            /// Data stored is a variable
+            /// </summary>
             Variable
         }
 
         /// <summary>
         /// Current parse mode
         /// </summary>
-        enum ParseMode
+        private enum ParseMode
         {
             /// <summary>
             /// Current text is an expression
             /// </summary>
             Expression,
+
             /// <summary>
             /// Current text is an operator
             /// </summary>
+            /// 
             Operator,
+
             /// <summary>
             /// Opens bracket
             /// </summary>
+            /// 
             BracketOpen,
+
             /// <summary>
             /// Closes bracket
             /// </summary>
             BracketClose
         }
 
-
-        /// <summary>
-        /// Bracketvalue
-        /// </summary>
-        const int BracketPriority = 20;
-
         #endregion
 
-        #region Static variables and methods
+        /// <summary>
+        /// Gets or sets a value indicating whether debug information should be shown
+        /// </summary>
+        public bool Debug
+        {
+            get { return this.debugActive; }
+            set { this.debugActive = value; }
+        }
 
-        static Dictionary<String, Operator> _OperatorTable =
-            new Dictionary<string, Operator>();
+        /// <summary>
+        /// Converts an object to a boolean
+        /// </summary>
+        /// <param name="value">Object to be converted</param>
+        /// <returns>true, if oObject is true or != 0 and != "" and != null</returns>
+        public static bool ConvertToBoolean(object value)
+        {
+            if (value == null)
+            {
+                return false;
+            }
+
+            if (value is bool)
+            {
+                return (bool)value;
+            }
+
+            if (value is int)
+            {
+                return ((int)value) != 0;
+            }
+
+            string valueAsString = value as string;
+            if (valueAsString != null)
+            {
+                return !String.IsNullOrEmpty(valueAsString)
+                    && valueAsString != Boolean.FalseString;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Compares two objects
+        /// </summary>
+        /// <param name="oA">First object</param>
+        /// <param name="oB">Second object</param>
+        /// <returns>-1 if oA is smaller than oB, 0 if they are equal, otherwise 1</returns>
+        public static int CompareObjects(object oA, object oB)
+        {
+            if ((oA == null || (oA as string) == string.Empty) &&
+                (oB == null || (oB as string) == string.Empty))
+            {
+                return 0;
+            }
+
+            if (oA == null)
+            {
+                return 1;
+            }
+
+            if (oB == null)
+            {
+                return -1;
+            }
+
+            // Konvertiere Int32 zu Int64
+            if (oA is int || oA is short)
+            {
+                oA = Convert.ToInt64(oA, CultureInfo.CurrentUICulture);
+            }
+
+            if (oB is int || oB is short)
+            {
+                oB = Convert.ToInt64(oB, CultureInfo.CurrentUICulture);
+            }
+
+            if (oA is short || oA is double)
+            {
+                oA = Convert.ToDouble(oA, CultureInfo.CurrentUICulture);
+                oB = Convert.ToDouble(oB, CultureInfo.CurrentUICulture);
+            }
+
+            if (oB is short || oB is double)
+            {
+                oA = Convert.ToDouble(oA, CultureInfo.CurrentUICulture);
+                oB = Convert.ToDouble(oB, CultureInfo.CurrentUICulture);
+            }
+
+            string strA = oA as string;
+            string strB = oB as string;
+
+            if (strA != null)
+            {
+                if (strB != null)
+                {
+                    return string.Compare(strA, strB, StringComparison.CurrentCulture);
+                }
+
+                if (oB is int)
+                {
+                    return string.Compare(strA, oB.ToString(), StringComparison.CurrentCulture);
+                }
+
+                return string.Compare(strA, oB.ToString(), StringComparison.CurrentCulture);
+            }
+
+            if (strB != null)
+            {
+                if (strA != null)
+                {
+                    return string.Compare(strB, strA, StringComparison.CurrentCulture);
+                }
+
+                if (oA is int)
+                {
+                    return string.Compare(strB, oA.ToString(), StringComparison.CurrentCulture);
+                }
+
+                return string.Compare(strB, oA.ToString(), StringComparison.CurrentCulture);
+            }
+
+            if (oA is long)
+            {
+                long nA = (long)oA;
+                if (strB != null)
+                {
+                    strA = nA.ToString(CultureInfo.CurrentUICulture);
+                    return string.Compare(strA, strB, StringComparison.CurrentCulture);
+                }
+
+                if (oB is long)
+                {
+                    long nB = (long)oB;
+                    return nA.CompareTo(nB);
+                }
+
+                return nA.CompareTo(oB);
+            }
+
+            if (oB is long)
+            {
+                long nB = (long)oB;
+                if (strA != null)
+                {
+                    strB = nB.ToString(CultureInfo.CurrentUICulture);
+                    return string.Compare(strB, strA, StringComparison.CurrentCulture);
+                }
+
+                if (oA is long)
+                {
+                    long nA = (long)oA;
+                    return nB.CompareTo(nA);
+                }
+
+                return nB.CompareTo(oA);
+            }
+
+            if (oA is double)
+            {
+                double dA = (double)oA;
+                double dB = (double)oB;
+
+                return dA.CompareTo(dB);
+            }
+
+            IComparable compA = oA as IComparable;
+            if (compA != null)
+            {
+                return compA.CompareTo(oB);
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Parses an expression and returns a boolean value
+        /// </summary>
+        /// <param name="expression">Expression to be parsed</param>
+        /// <returns>Parsed variable as boolean</returns>
+        public bool ParseForBoolean(string expression)
+        {
+            object result = this.Parse(expression);
+            return ConvertToBoolean(result);
+        }
+
+        /// <summary>
+        /// Parses an expression and returns a string
+        /// </summary>
+        /// <param name="expression">Variable to parsed</param>
+        /// <returns>Parsed variable as string</returns>
+        public string ParseForString(string expression)
+        {
+            object result = this.Parse(expression);
+            string resultAsString = result as string;
+            if (resultAsString != null)
+            {
+                return resultAsString;
+            }
+
+            return string.Format(CultureInfo.CurrentUICulture, "{0}", result);
+        }
+
+        /// <summary>
+        /// Parses an expression
+        /// </summary>
+        /// <param name="expression">Expression to be parsed</param>
+        /// <returns>Result of Expression</returns>
+        public object Parse(string expression)
+        {
+            try
+            {
+                // Check for empty string
+                if (string.IsNullOrEmpty(expression))
+                {
+                    return string.Empty;
+                }
+
+                // Initialize
+                int length = expression.Length;
+                ParseMode parseMode =
+                    Char.IsLetterOrDigit(expression[0]) || expression[0] == '"'
+                        || expression[0] == '(' ?
+                        ParseMode.Expression : ParseMode.Operator;
+                bool onlyDigits = true;
+                bool loop = true;
+                int expressionLength = -1;
+                this.expressionStack = new Stack<ExpressionStructure>();
+                this.operatorStack = new Stack<OperatorStructure>();
+                this.currentOperatorPriority = 0;
+                bool quoteMode = false;
+                this.currentPosition = -1;
+
+                // Start loop
+                while (loop)
+                {
+                    // Parses current value till special character
+                    this.currentPosition++;
+                    expressionLength++;
+                    char currentChar;
+
+                    bool endExpression = false;
+
+                    if (this.currentPosition == length)
+                    {
+                        // End of string
+                        endExpression = true;
+                        loop = false;
+                        currentChar = ' ';
+                    }
+                    else
+                    {
+                        currentChar = expression[this.currentPosition];
+                        if (currentChar == ')')
+                        {
+                            endExpression = true;
+                        }
+                        else if (currentChar == '(')
+                        {
+                            endExpression = true;
+                        }
+                        else
+                        {
+                            if (currentChar == '"')
+                            {
+                                quoteMode = !quoteMode;
+                            }
+
+                            switch (parseMode)
+                            {
+                                case ParseMode.Expression:
+                                    if (!Char.IsDigit(currentChar)
+                                        && !Char.IsLetter(currentChar)
+                                        && !Char.IsWhiteSpace(currentChar)
+                                        && currentChar != '_'
+                                        && currentChar != '"')
+                                    {
+                                        // No digit, no letter, no quotes, must be an operator
+                                        if (!quoteMode)
+                                        {
+                                            endExpression = true;
+                                        }
+                                    }
+                                    else if (!Char.IsDigit(currentChar))
+                                    {
+                                        onlyDigits = false;
+                                    }
+
+                                    break;
+                                case ParseMode.Operator:
+                                    if (Char.IsLetterOrDigit(currentChar) || currentChar == '"')
+                                    {
+                                        // Operator
+                                        endExpression = true;
+
+                                        onlyDigits = Char.IsDigit(currentChar);
+                                    }
+
+                                    break;
+                                case ParseMode.BracketOpen:
+                                    // Ignore
+                                    endExpression = true;
+                                    break;
+                                case ParseMode.BracketClose:
+                                    // Ignore
+                                    endExpression = true;
+                                    break;
+                            }
+                        }
+                    }
+
+                    // If end of current expression/operator, evaluate it
+                    if (endExpression)
+                    {
+                        if (expressionLength == 0)
+                        {
+                            parseMode = ParseMode.Expression;
+                        }
+                        else
+                        {
+                            string temp = expression.Substring(
+                                this.currentPosition - expressionLength, 
+                                expressionLength);
+
+                            // Executes mode
+                            switch (parseMode)
+                            {
+                                case ParseMode.Expression:
+                                    this.EvaluateLiteral(temp, onlyDigits);
+                                    if (onlyDigits)
+                                    {
+                                        this.WriteDebug("Number: " + temp);
+                                    }
+                                    else
+                                    {
+                                        this.WriteDebug("Expression: " + temp);
+                                    }
+
+                                    parseMode = ParseMode.Operator;
+                                    break;
+                                case ParseMode.Operator:
+                                    this.EvaluateOperator(temp);
+                                    this.WriteDebug("Operator:" + temp);
+                                    parseMode = ParseMode.Expression;
+                                    break;
+                                case ParseMode.BracketClose:
+                                    this.WriteDebug(")");
+                                    parseMode = ParseMode.Operator;
+                                    break;
+                                case ParseMode.BracketOpen:
+                                    this.WriteDebug("(");
+                                    parseMode = ParseMode.Expression;
+                                    break;
+                            }
+                        }
+
+                        // Brackets increases priority of operator, so they are executed before
+                        // the operators around the bracket
+                        if (currentChar == ')')
+                        {
+                            parseMode = ParseMode.BracketClose;
+                            this.currentOperatorPriority -= ExpressionParser.BracketPriority;
+                        }
+
+                        if (currentChar == '(')
+                        {
+                            if (parseMode == ParseMode.Expression)
+                            {
+                                // This bracket is for setting priorities
+                                parseMode = ParseMode.BracketOpen;
+                                this.currentOperatorPriority += BracketPriority;
+                            }
+                            else
+                            {
+                                // This bracket is for a function
+                                this.EvaluateFunction(expression);
+
+                                // Checks, if function is last operator
+                                if (this.currentPosition >= length)
+                                {
+                                    break;
+                                }
+
+                                // Kleiner Sonderfall, der überprüft, ob sich die 
+                                // Klammern schlieüen
+                                if (expression[this.currentPosition] == ')')
+                                {
+                                    this.currentOperatorPriority -= BracketPriority;
+                                    parseMode = ParseMode.BracketClose;
+                                }
+                            }
+                        }
+
+                        expressionLength = 0;
+                    }
+                }
+
+                while (this.operatorStack.Count > 0)
+                {
+                    var operatorObject = this.operatorStack.Pop();
+                    this.ExecuteOperator(operatorObject.Operator);
+                }
+
+                return this.PopObject();
+            }
+            catch (Exception exc)
+            {
+                throw new ParserException(
+                    string.Format(
+                        CultureInfo.CurrentUICulture,
+                        Localization_Parser.ExpressionParser_Exception,
+                        expression,
+                        exc.Message),
+                    exc);
+            }
+        }
+
+        /// <summary>
+        /// Pops one integer from expressionstack
+        /// </summary>
+        /// <returns>The object on stack as Integer</returns>
+        public int PopInteger()
+        {
+            object objectOnStack = this.PopObject();
+            if (objectOnStack is int)
+            {
+                return (int)objectOnStack;
+            }
+
+            if (objectOnStack is IConvertible)
+            {
+                return Convert.ToInt32(objectOnStack, CultureInfo.CurrentUICulture);
+            }
+
+            throw new InvalidCastException();
+        }
+
+        /// <summary>
+        /// Pops one double from expressionstack
+        /// </summary>
+        /// <returns>The object on stack as Double</returns>
+        public double PopDouble()
+        {
+            object objectOnStack = this.PopObject();
+            if (objectOnStack is double)
+            {
+                return (double)objectOnStack;
+            }
+
+            if (objectOnStack is IConvertible)
+            {
+                return Convert.ToDouble(objectOnStack, CultureInfo.CurrentUICulture);
+            }
+
+            throw new InvalidCastException();
+        }
+
+        /// <summary>
+        /// Pops string from expressionstack
+        /// </summary>
+        /// <returns>The object on stack as String</returns>
+        public string PopString()
+        {
+            object objectOnStack = this.PopObject();
+            string objectOnStackAsString = objectOnStack as string;
+            if (objectOnStackAsString != null)
+            {
+                return objectOnStackAsString;
+            }
+
+            return objectOnStack.ToString();
+        }
+
+        /// <summary>
+        /// Pops a boolean
+        /// </summary>
+        /// <returns>The object on stack as boolean</returns>
+        public bool PopBoolean()
+        {
+            object objectOnStack = this.PopObject();
+            return ConvertToBoolean(objectOnStack);
+        }
 
         /// <summary>
         /// Gets operator by string
         /// </summary>
-        /// <param name="strOperator">Operator as string</param>
+        /// <param name="operatorName">Operator as string</param>
         /// <returns>Operator or Operator.Unknown of <c>strOperator</c> is invalid</returns>
-        static Operator GetOperator(String strOperator)
+        private static Operator GetOperator(string operatorName)
         {
-            Operator oReturn;
+            Operator result;
 
-            if (_OperatorTable.TryGetValue(strOperator, out oReturn))
+            if (operatorTable.TryGetValue(operatorName, out result))
             {
-                return oReturn;
+                return result;
             }
+
             return Operator.Unknown;
+        }
+
+        /// <summary>
+        /// Executes a method on an object
+        /// </summary>
+        /// <param name="instance">Instance of object, whose method should be executed</param>
+        /// <param name="functionName">Name of the function</param>
+        /// <param name="parameters">Parameters for the method</param>
+        /// <returns>Result of the execution</returns>
+        private static object ExecuteMethod(object instance, string functionName, List<object> parameters)
+        {
+            if (instance == null)
+            {
+                return null;
+            }
+
+            if (instance is TimeSpan)
+            {
+                instance = new TimeSpanHelper((TimeSpan)instance);
+            }
+            else if (instance is DateTime)
+            {
+                instance = new DateTimeHelper((DateTime)instance);
+            }
+            else if (instance is long)
+            {
+                instance = new LongHelper((long)instance);
+            }
+            else if (instance is double)
+            {
+                instance = new DoubleHelper((double)instance);
+            }
+            else
+            {
+                string strInstance = instance as string;
+                if (strInstance != null)
+                {
+                    instance = new StringHelper(strInstance);
+                }
+            }
+
+            IParserObject parserInstance = instance as IParserObject;
+
+            if (parserInstance != null)
+            {
+                return parserInstance.ExecuteFunction(functionName, parameters);
+            }
+            else
+            {
+                // Yeah, Reflection fun
+                var types = new Type[parameters.Count];
+
+                int n = 0;
+                foreach (object parameter in parameters)
+                {
+                    types[n] = parameter.GetType();
+                    n++;
+                }
+
+                var methodInfo = instance.GetType().GetMethod(functionName, types);
+
+                if (methodInfo == null)
+                {
+                    return "";
+                }
+                else
+                {
+                    return methodInfo.Invoke(instance, parameters.ToArray());
+                }
+            }
         }
 
         /// <summary>
         /// Gets operator priority of a certain operator. 
         /// </summary>
-        /// <param name="eOperator">Operator</param>
-        /// <returns>Priority</returns>
-        static int GetOperatorPriority(Operator eOperator)
+        /// <param name="operatorType">Type of the operator</param>
+        /// <returns>Priority of the operator</returns>
+        private static int GetOperatorPriority(Operator operatorType)
         {
-            switch (eOperator)
+            switch (operatorType)
             {
                 case Operator.Equal:
                     return 0;
@@ -166,630 +893,404 @@ namespace BurnSystems.Parser
                 case Operator.Dereference:
                     return 7;
             }
+
             return 0;
         }
 
-        static bool IsLeftPriority(Operator eOperator)
+        /// <summary>
+        /// Checks, if the operator is a left priority operator
+        /// </summary>
+        /// <param name="operatorType">Type of operator</param>
+        /// <returns>true, if this is a leftoperator type</returns>
+        private static bool IsLeftPriority(Operator operatorType)
         {
-            if (eOperator == Operator.LogicalNot)
+            if (operatorType == Operator.LogicalNot)
             {
                 return false;
             }
+
             return true;
         }
 
         /// <summary>
-        /// Static constructor
+        /// Evaluates operator
         /// </summary>
-        static ExpressionParser()
+        /// <param name="nameOperator">Name of the operator</param>
+        private void EvaluateOperator(string nameOperator)
         {
-            _OperatorTable["+"] = Operator.Addition;
-            _OperatorTable["-"] = Operator.Subtraction;
-            _OperatorTable["*"] = Operator.Multiplication;
-            _OperatorTable["/"] = Operator.Division;
-            _OperatorTable["."] = Operator.Concatenation;
-            _OperatorTable["&"] = Operator.And;
-            _OperatorTable["|"] = Operator.Or;
-            _OperatorTable["^"] = Operator.Xor;
-            _OperatorTable["&&"] = Operator.LogicalAnd;
-            _OperatorTable["||"] = Operator.LogicalOr;
-            _OperatorTable["^^"] = Operator.LogicalXor;
-            _OperatorTable["!"] = Operator.LogicalNot;
-            _OperatorTable["->"] = Operator.Dereference;
-            _OperatorTable["=="] = Operator.Equal;
-            _OperatorTable["!="] = Operator.Inequal;
-            _OperatorTable[">"] = Operator.Greater;
-            _OperatorTable[">="] = Operator.GreaterOrEqual;
-            _OperatorTable["<"] = Operator.Less;
-            _OperatorTable["<="] = Operator.LessOrEqual;
-            _OperatorTable["!="] = Operator.Inequal;
-            _OperatorTable["<>"] = Operator.Inequal;
+            var operatorType = GetOperator(nameOperator);
+            int priority = ExpressionParser.GetOperatorPriority(operatorType) + this.currentOperatorPriority;
+            bool leftPriority = IsLeftPriority(operatorType);
+
+            // Checks, if current operator has higher priority than operator on stack
+            while (this.operatorStack.Count > 0)
+            {
+                OperatorStructure structure = this.operatorStack.Peek();
+
+                if ((priority == structure.Priority && leftPriority) ||
+                    (priority < structure.Priority))
+                {
+                    // Execute current operator
+                    this.operatorStack.Pop();
+
+                    this.ExecuteOperator(structure.Operator);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            this.operatorStack.Push(new OperatorStructure(operatorType, priority));
         }
 
         /// <summary>
-        /// Converts an object to a boolean
+        /// Executes operator
         /// </summary>
-        /// <param name="oObject">Object to be converted</param>
-        /// <returns>true, if oObject is true or != 0 and != "" and != null</returns>
-        public static bool ConvertToBoolean(object oValue)
+        /// <param name="operatorType">Operator to be executed</param>
+        private void ExecuteOperator(Operator operatorType)
         {
-            if (oValue == null)
+            this.WriteDebug("Execute Operator: " + operatorType.ToString());
+            switch (operatorType)
             {
-                return false;
-            }
-            if (oValue is bool)
-            {
-                return (bool)oValue;
-            }
-            if (oValue is int)
-            {
-                return ((int)oValue) != 0;
-            }
-            String strString = oValue as String;
-            if (strString != null)
-            {
-                return !String.IsNullOrEmpty(strString)
-                    && strString != Boolean.FalseString;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Compares two objects
-        /// </summary>
-        /// <param name="oA">First object</param>
-        /// <param name="oB">Second object</param>
-        /// <returns>-1 if oA is smaller than oB, 0 if they are equal, otherwise 1</returns>
-        public static int CompareObjects(object oA, object oB)
-        {
-            if ((oA == null || (oA as String) == String.Empty) &&
-                (oB == null || (oB as String) == String.Empty))
-            {
-                return 0;
-            }
-            if (oA == null)
-            {
-                return 1;
-            }
-            if (oB == null)
-            {
-                return -1;
-            }
-
-            // Konvertiere Int32 zu Int64
-            if (oA is int || oA is short)
-            {
-                oA = Convert.ToInt64(oA, CultureInfo.CurrentUICulture);
-            }
-            if (oB is int || oB is short)
-            {
-                oB = Convert.ToInt64(oB, CultureInfo.CurrentUICulture);
-            }
-            if (oA is short || oA is double)
-            {
-                oA = Convert.ToDouble(oA, CultureInfo.CurrentUICulture);
-                oB = Convert.ToDouble(oB, CultureInfo.CurrentUICulture);
-            }
-            if (oB is short || oB is double)
-            {
-                oA = Convert.ToDouble(oA, CultureInfo.CurrentUICulture);
-                oB = Convert.ToDouble(oB, CultureInfo.CurrentUICulture);
-            }
-
-            String strA = oA as String;
-            String strB = oB as String;
-
-            if (strA != null)
-            {
-                if (strB != null)
-                {
-                    return String.Compare(strA, strB, StringComparison.CurrentCulture);
-                }
-                if (oB is int)
-                {
-                    return String.Compare(strA, oB.ToString(), StringComparison.CurrentCulture);
-                }
-                return String.Compare(strA, oB.ToString(), StringComparison.CurrentCulture);
-            }
-            if (strB != null)
-            {
-                if (strA != null)
-                {
-                    return String.Compare(strB, strA, StringComparison.CurrentCulture);
-                }
-                if (oA is int)
-                {
-                    return String.Compare(strB, oA.ToString(), StringComparison.CurrentCulture);
-                }
-                return String.Compare(strB, oA.ToString(), StringComparison.CurrentCulture);
-            }
-            if (oA is long)
-            {
-                long nA = (long)oA;
-                if (strB != null)
-                {
-                    strA = nA.ToString(CultureInfo.CurrentUICulture);
-                    return String.Compare(strA, strB, StringComparison.CurrentCulture);
-                }
-                if (oB is long)
-                {
-                    long nB = (long)oB;
-                    return nA.CompareTo(nB);
-                }                
-                return nA.CompareTo(oB);
-            }
-            if (oB is long)
-            {
-                long nB = (long)oB;
-                if (strA != null)
-                {
-                    strB = nB.ToString(CultureInfo.CurrentUICulture);
-                    return String.Compare(strB, strA, StringComparison.CurrentCulture);
-                }
-                if (oA is long)
-                {
-                    long nA = (long)oA;
-                    return nB.CompareTo(nA);
-                }
-                return nB.CompareTo(oA);
-            }
-            if (oA is double)
-            {
-                double dA = (double)oA;
-                double dB = (double)oB;
-
-                return dA.CompareTo(dB);
-            }
-
-            IComparable iCompA = oA as IComparable;
-            if (iCompA != null)
-            {
-                return iCompA.CompareTo(oB);
-            }
-            return -1;
-        }
-
-
-        #endregion
-
-        /// <summary>
-        /// Core
-        /// </summary>
-        TemplateParser _Core;
-
-        /// <summary>
-        /// Current position
-        /// </summary>
-        int _CurrentPosition;
-
-        /// <summary>
-        /// Current operator priority
-        /// </summary>
-        int _CurrentOperatorPriority;
-
-        /// <summary>
-        /// Structure for expressions
-        /// </summary>
-        class ExpressionStructure
-        {
-            public object Literal;
-
-            public LiteralType ExpressionType;
-
-            /// <summary>
-            /// Creates new expressiontype
-            /// </summary>
-            /// <param name="oLiteral">Literal</param>
-            /// <param name="eType">Type</param>
-            public ExpressionStructure(object oLiteral, LiteralType eType)
-            {
-                Literal = oLiteral;
-                ExpressionType = eType;
+                case Operator.Addition:
+                    this.ExecuteAddition();
+                    break;
+                case Operator.Subtraction:
+                    this.ExecuteSubtraction();
+                    break;
+                case Operator.Multiplication:
+                    this.ExecuteMultiplication();
+                    break;
+                case Operator.Division:
+                    this.ExecuteDivision();
+                    break;
+                case Operator.Concatenation:
+                    this.ExecuteConcatenation();
+                    break;
+                case Operator.LogicalAnd:
+                    this.ExecuteLogicalAnd();
+                    break;
+                case Operator.LogicalOr:
+                    this.ExecuteLogicalOr();
+                    break;
+                case Operator.LogicalXor:
+                    this.ExecuteLogicalXor();
+                    break;
+                case Operator.LogicalNot:
+                    this.ExecuteLogicalNot();
+                    break;
+                case Operator.And:
+                    this.ExecuteAnd();
+                    break;
+                case Operator.Or:
+                    this.ExecuteOr();
+                    break;
+                case Operator.Xor:
+                    this.ExecuteXor();
+                    break;
+                case Operator.Dereference:
+                    this.ExecuteDereference();
+                    break;
+                case Operator.Equal:
+                    this.ExecuteEqual();
+                    break;
+                case Operator.Greater:
+                    this.ExecuteGreater();
+                    break;
+                case Operator.GreaterOrEqual:
+                    this.ExecuteGreaterOrEqual();
+                    break;
+                case Operator.Less:
+                    this.ExecuteLess();
+                    break;
+                case Operator.LessOrEqual:
+                    this.ExecuteLessOrEqual();
+                    break;
+                case Operator.Inequal:
+                    this.ExecuteInequal();
+                    break;
             }
         }
 
         /// <summary>
-        /// Operator structure
+        /// Executes an inequal function
         /// </summary>
-        class OperatorStructure
+        private void ExecuteInequal()
         {
-            /// <summary>
-            /// Operator
-            /// </summary>
-            public Operator Operator;
+            object oA = this.PopObject();
+            object oB = this.PopObject();
 
-            /// <summary>
-            /// Value
-            /// </summary>
-            public int Priority;
+            bool equal = CompareObjects(oB, oA) != 0;
+            var structure = new ExpressionStructure(equal, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
+        }
 
-            /// <summary>
-            /// Creates new operator structure
-            /// </summary>
-            /// <param name="oOperator">Operator</param>
-            /// <param name="nPriority">Value</param>
-            public OperatorStructure(Operator oOperator, int nPriority)
+        /// <summary>
+        /// Executes the less or equal function
+        /// </summary>
+        private void ExecuteLessOrEqual()
+        {
+            object oA = this.PopObject();
+            object oB = this.PopObject();
+
+            bool equal = CompareObjects(oB, oA) <= 0;
+            var structure = new ExpressionStructure(equal, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
+        }
+
+        /// <summary>
+        /// Executes the less function
+        /// </summary>
+        private void ExecuteLess()
+        {
+            object oA = this.PopObject();
+            object oB = this.PopObject();
+
+            bool equal = CompareObjects(oB, oA) < 0;
+            var structure = new ExpressionStructure(equal, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
+        }
+
+        /// <summary>
+        /// Executes the greater or equal function
+        /// </summary>
+        private void ExecuteGreaterOrEqual()
+        {
+            object oA = this.PopObject();
+            object oB = this.PopObject();
+
+            bool equal = CompareObjects(oB, oA) >= 0;
+            var structure = new ExpressionStructure(equal, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
+        }
+
+        /// <summary>
+        /// Executes the greater function
+        /// </summary>
+        private void ExecuteGreater()
+        {
+            object oA = this.PopObject();
+            object oB = this.PopObject();
+
+            bool equal = CompareObjects(oB, oA) > 0;
+            var structure = new ExpressionStructure(equal, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
+        }
+
+        /// <summary>
+        /// Executes the equal function
+        /// </summary>
+        private void ExecuteEqual()
+        {
+            object oA = this.PopObject();
+            object oB = this.PopObject();
+
+            bool equal = CompareObjects(oB, oA) == 0;
+            var structure = new ExpressionStructure(equal, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
+        }
+
+        /// <summary>
+        /// Makes a dereference
+        /// </summary>
+        private void ExecuteDereference()
+        {
+            var structure = this.PopExpressionStructure();
+            string method = (string)structure.Literal;
+
+            var objectOnStack = this.PopObject();
+            var list = objectOnStack as IList;
+
+            if (objectOnStack == null)
             {
-                Operator = oOperator;
-                Priority = nPriority;
+                this.expressionStack.Push(
+                    new ExpressionStructure(
+                        null, LiteralType.Object));
+                return;
             }
-        }
-
-        /// <summary>
-        /// Operator stack
-        /// </summary>
-        Stack<OperatorStructure> _OperatorStack;
-
-        /// <summary>
-        /// Expression
-        /// </summary>
-        Stack<ExpressionStructure> _ExpressionStack;
-
-        /// <summary>
-        /// Flag, if debug is active
-        /// </summary>
-        bool _Debug;
-
-        /// <summary>
-        /// Flag, if debug information should be shown
-        /// </summary>
-        public bool Debug
-        {
-            get { return _Debug; }
-            set { _Debug = value; }
-        }
-
-        /// <summary>
-        /// Creates new expression parser
-        /// </summary>
-        public ExpressionParser(TemplateParser oCore)
-        {
-            _Core = oCore;
-            _ExpressionStack = new Stack<ExpressionStructure>();
-            _OperatorStack = new Stack<OperatorStructure>();
-        }
-
-        /// <summary>
-        /// Parses an expression and returns a boolean value
-        /// </summary>
-        /// <param name="strExpression">Expression to be parsed</param>
-        /// <returns>Flag</returns>
-        public bool ParseForBoolean(string strExpression)
-        {
-            object oResult = Parse(strExpression);
-            return ConvertToBoolean(oResult);
-        }
-
-        /// <summary>
-        /// Parses an expression and returns a string
-        /// </summary>
-        /// <param name="strVariable">Variable</param>
-        public String ParseForString(string strExpression)
-        {
-            object oResult = Parse(strExpression);
-            String strString = oResult as String;
-            if (strString != null)
+            else if (objectOnStack is int)
             {
-                return strString;
+                // Creates int helper object
             }
-
-            return String.Format(CultureInfo.CurrentUICulture, "{0}", oResult);
-        }
-
-        /// <summary>
-        /// Parses an expression
-        /// </summary>
-        /// <param name="strExpression">Expression to be parsed</param>
-        /// <returns>Result</returns>
-        public object Parse(String strExpression)
-        {
-            try
+            else if (objectOnStack is double)
             {
-                // Check for empty string
-
-                if (String.IsNullOrEmpty(strExpression))
+                objectOnStack = new DoubleHelper((double)objectOnStack);
+            }
+            else if (objectOnStack is long)
+            {
+                objectOnStack = new LongHelper((long)objectOnStack);
+            }
+            else if (objectOnStack is TimeSpan)
+            {
+                objectOnStack = new TimeSpanHelper((TimeSpan)objectOnStack);
+            }
+            else if (objectOnStack is DateTime)
+            {
+                objectOnStack = new DateTimeHelper((DateTime)objectOnStack);
+            }
+            else if (list != null)
+            {
+                objectOnStack = new IListHelper(list);
+            }
+            else
+            {
+                string strObject = objectOnStack as string;
+                if (strObject != null)
                 {
-                    return String.Empty;
+                    objectOnStack = new StringHelper(strObject);
                 }
-                // Initialize
-                int nLength = strExpression.Length;
-                ParseMode eMode =
-                    Char.IsLetterOrDigit(strExpression[0]) || strExpression[0] == '"'
-                        || strExpression[0] == '(' ?
-                        ParseMode.Expression : ParseMode.Operator;
-                bool bOnlyDigits = true;
-                bool bLoop = true;
-                int nExpressionLength = -1;
-                _ExpressionStack = new Stack<ExpressionStructure>();
-                _OperatorStack = new Stack<OperatorStructure>();
-                _CurrentOperatorPriority = 0;
-                bool bQuote = false;
-                _CurrentPosition = -1;
+            }
 
-                // Start loop
-                while (bLoop)
+            IParserObject parserObject = objectOnStack as IParserObject;
+            IDictionary dictionary = objectOnStack as IDictionary;
+            IParserDictionary parserDictionary = objectOnStack as IParserDictionary;
+            if (parserObject != null)
+            {
+                this.expressionStack.Push(
+                    new ExpressionStructure(
+                        parserObject.GetProperty(method), LiteralType.Object));
+            }
+            else if (dictionary != null)
+            {
+                this.expressionStack.Push(
+                    new ExpressionStructure(
+                        dictionary[method],
+                        LiteralType.Object));
+            }
+            else if (parserDictionary != null)
+            {
+                this.expressionStack.Push(
+                    new ExpressionStructure(
+                        parserDictionary[method],
+                        LiteralType.Object));
+            }
+            else
+            {
+                // Do reflections
+                var type = objectOnStack.GetType();
+                var property = type.GetProperty(method);
+                object result = "";
+
+                if (property != null)
                 {
-                    // Parses current value till special character
-
-                    _CurrentPosition++;
-                    nExpressionLength++;
-                    char cCurrentChar;
-
-                    bool bEndExpression = false;
-
-                    if (_CurrentPosition == nLength)
-                    {
-                        // End of string
-                        bEndExpression = true;
-                        bLoop = false;
-                        cCurrentChar = ' ';
-                    }
-                    else
-                    {
-                        cCurrentChar = strExpression[_CurrentPosition];
-                        if (cCurrentChar == ')')
-                        {
-                            bEndExpression = true;
-                        }
-                        else if (cCurrentChar == '(')
-                        {
-                            bEndExpression = true;
-                        }
-                        else
-                        {
-                            if (cCurrentChar == '"')
-                            {
-                                bQuote = !bQuote;
-                            }
-                            switch (eMode)
-                            {
-                                case ParseMode.Expression:
-                                    if (!Char.IsDigit(cCurrentChar)
-                                        && !Char.IsLetter(cCurrentChar)
-                                        && !Char.IsWhiteSpace(cCurrentChar)
-                                        && cCurrentChar != '_'
-                                        && cCurrentChar != '"')
-                                    {
-                                        // No digit, no letter, no quotes, must be an operator
-                                        if (!bQuote)
-                                        {
-                                            bEndExpression = true;
-                                        }
-                                    }
-                                    else if (!Char.IsDigit(cCurrentChar))
-                                    {
-                                        bOnlyDigits = false;
-                                    }
-                                    break;
-                                case ParseMode.Operator:
-                                    if (Char.IsLetterOrDigit(cCurrentChar) || cCurrentChar == '"')
-                                    {
-                                        // Operator
-                                        bEndExpression = true;
-
-                                        bOnlyDigits = Char.IsDigit(cCurrentChar);
-                                    }
-                                    break;
-                                case ParseMode.BracketOpen:
-                                    // Ignore
-                                    bEndExpression = true;
-                                    break;
-                                case ParseMode.BracketClose:
-                                    // Ignore
-                                    bEndExpression = true;
-                                    break;
-                            }
-                        }
-                    }
-
-                    // If end of current expression/operator, evaluate it
-                    if (bEndExpression)
-                    {
-                        if (nExpressionLength == 0)
-                        {
-                            eMode = ParseMode.Expression;
-                        }
-                        else
-                        {
-                            String strTemp = strExpression.Substring(_CurrentPosition - nExpressionLength, nExpressionLength);
-
-                            // Executes mode
-                            switch (eMode)
-                            {
-                                case ParseMode.Expression:
-                                    EvaluateLiteral(strTemp, bOnlyDigits);
-                                    if (bOnlyDigits)
-                                    {
-                                        WriteDebug("Number: " + strTemp);
-                                    }
-                                    else
-                                    {
-                                        WriteDebug("Expression: " + strTemp);
-                                    }
-                                    eMode = ParseMode.Operator;
-                                    break;
-                                case ParseMode.Operator:
-                                    EvaluateOperator(strTemp);
-                                    WriteDebug("Operator:" + strTemp);
-                                    eMode = ParseMode.Expression;
-                                    break;
-                                case ParseMode.BracketClose:
-                                    WriteDebug(")");
-                                    eMode = ParseMode.Operator;
-                                    break;
-                                case ParseMode.BracketOpen:
-                                    WriteDebug("(");
-                                    eMode = ParseMode.Expression;
-                                    break;
-                            }
-                        }
-
-                        // Brackets increases priority of operator, so they are executed before
-                        // the operators around the bracket
-                        if (cCurrentChar == ')')
-                        {
-                            eMode = ParseMode.BracketClose;
-                            _CurrentOperatorPriority -= BracketPriority;
-                        }
-                        if (cCurrentChar == '(')
-                        {
-                            if (eMode == ParseMode.Expression)
-                            {
-                                // This bracket is for setting priorities
-                                eMode = ParseMode.BracketOpen;
-                                _CurrentOperatorPriority += BracketPriority;
-                            }
-                            else
-                            {
-                                // This bracket is for a function
-
-                                EvaluateFunction(strExpression);
-
-                                // Checks, if function is last operator
-                                if (_CurrentPosition >= nLength)
-                                {
-                                    break;
-                                }
-
-                                // Kleiner Sonderfall, der überprüft, ob sich die 
-                                // Klammern schlieüen
-                                if (strExpression[_CurrentPosition] == ')')
-                                {
-                                    _CurrentOperatorPriority -= BracketPriority;
-                                    eMode = ParseMode.BracketClose;
-                                }
-                            }
-                        }
-
-                        nExpressionLength = 0;
-                    }
+                    result = property.GetValue(objectOnStack, null);
                 }
 
-                while (_OperatorStack.Count > 0)
-                {
-                    OperatorStructure oOperator = _OperatorStack.Pop();
-                    ExecuteOperator(oOperator.Operator);
-                }
-
-                return PopObject();
-            }
-            catch (Exception exc)
-            {
-                throw new ParserException(
-                    String.Format(
-                        CultureInfo.CurrentUICulture,
-                        Localization_Parser.ExpressionParser_Exception,
-                        strExpression,
-                        exc.Message),
-                    exc);
+                this.expressionStack.Push(
+                    new ExpressionStructure(
+                        result, LiteralType.Object));
             }
         }
 
         /// <summary>
         /// Evaluates the function
         /// </summary>
-        /// <param name="strExpression">Complete Expression string</param>
-        private void EvaluateFunction(String strExpression)
+        /// <param name="expression">Complete Expression string</param>
+        private void EvaluateFunction(string expression)
         {
-            char cCurrentChar;
+            char currentChar;
 
             // Look for closing bracket and set all parameter
-            List<object> aParameters = new List<object>();
+            List<object> parameters = new List<object>();
+
             // Open brackets
-            int nOpenBrackets = 1;
+            int numberOfOpenBrackets = 1;
+
             // Flag, if currently in quote
-            bool bQuote = false;
-            bool bEscape = false;
-            int nParameterLength = 0;
-            _CurrentPosition++;
+            bool quoteMode = false;
+            bool escapeMode = false;
+            int parameterLength = 0;
+            this.currentPosition++;
 
             while (true)
             {
-                cCurrentChar = strExpression[_CurrentPosition];
-                _CurrentPosition++;
+                currentChar = expression[this.currentPosition];
+                this.currentPosition++;
 
-                if (bEscape)
+                if (escapeMode)
                 {
-                    bEscape = false;
+                    escapeMode = false;
                     continue;
                 }
-                else if (cCurrentChar == '\\')
+                else if (currentChar == '\\')
                 {
-                    bEscape = true;
+                    escapeMode = true;
                 }
-                else if (cCurrentChar == '"')
+                else if (currentChar == '"')
                 {
-                    bQuote = !bQuote;
-                    nParameterLength++;
+                    quoteMode = !quoteMode;
+                    parameterLength++;
                 }
-                else if (cCurrentChar == '(' && !bQuote)
+                else if (currentChar == '(' && !quoteMode)
                 {
-                    nOpenBrackets++;
+                    numberOfOpenBrackets++;
                 }
-                else if (cCurrentChar == ')' && !bQuote)
+                else if (currentChar == ')' && !quoteMode)
                 {
-                    nOpenBrackets--;
+                    numberOfOpenBrackets--;
                 }
-                else if (cCurrentChar == ',' && !bQuote)
+                else if (currentChar == ',' && !quoteMode)
                 {
-                    String strParameter =
-                        strExpression.Substring(_CurrentPosition - nParameterLength - 1,
-                        nParameterLength);
+                    var strParameter =
+                        expression.Substring(
+                        this.currentPosition - parameterLength - 1,
+                        parameterLength);
 
-                    ExpressionParser oParser = new ExpressionParser(_Core);
-                    aParameters.Add(oParser.Parse(strParameter));
+                    var expressionParser = new ExpressionParser(this.core);
+                    parameters.Add(expressionParser.Parse(strParameter));
 
-                    nParameterLength = 0;
+                    parameterLength = 0;
                 }
                 else
                 {
-                    nParameterLength++;
+                    parameterLength++;
                 }
 
-                if (nOpenBrackets == 0)
+                if (numberOfOpenBrackets == 0)
                 {
-                    if (nParameterLength != 0)
+                    if (parameterLength != 0)
                     {
-                        String strParameter =
-                            strExpression.Substring(_CurrentPosition - nParameterLength - 1,
-                            nParameterLength);
+                        var parameter =
+                            expression.Substring(
+                            this.currentPosition - parameterLength - 1,
+                            parameterLength);
 
-                        ExpressionParser oParser = new ExpressionParser(_Core);
-                        aParameters.Add(oParser.Parse(strParameter));
+                        var expressionParser = new ExpressionParser(this.core);
+                        parameters.Add(expressionParser.Parse(parameter));
                     }
 
                     // Execute function
-
-                    ExpressionStructure oStructure = _ExpressionStack.Pop();
-                    if (oStructure.ExpressionType == LiteralType.Variable)
+                    var structure = this.expressionStack.Pop();
+                    if (structure.ExpressionType == LiteralType.Variable)
                     {
                         // Check, if last operator is a dereference pointer
+                        var strFunctionName = (string)structure.Literal;
 
-                        String strFunctionName = (String)oStructure.Literal;
-
-                        if (_OperatorStack.Count != 0 &&
-                            _OperatorStack.Peek().Operator == Operator.Dereference)
+                        if (this.operatorStack.Count != 0 &&
+                            this.operatorStack.Peek().Operator == Operator.Dereference)
                         {
                             // Ok, have fun, execute function on this object
-                            _OperatorStack.Pop();
+                            this.operatorStack.Pop();
 
-                            object oInstance = PopObject();
+                            object instance = this.PopObject();
 
-                            object oResult = ExecuteMethod(oInstance, strFunctionName, aParameters);
+                            object result = ExecuteMethod(instance, strFunctionName, parameters);
 
-                            ExpressionStructure oNew = new ExpressionStructure(
-                                oResult, LiteralType.Object);
-                            _ExpressionStack.Push(oNew);
+                            var newObject = new ExpressionStructure(
+                                result,
+                                LiteralType.Object);
+                            this.expressionStack.Push(newObject);
                         }
                         else
                         {
                             // Variable, execute function
+                            object result = TemplateParser.ExecuteFunction(strFunctionName, parameters);
 
-                            object oResult = TemplateParser.ExecuteFunction(strFunctionName, aParameters);
-
-                            ExpressionStructure oNew = new ExpressionStructure(
-                                oResult, LiteralType.Object);
-                            _ExpressionStack.Push(oNew);
+                            var newObject = new ExpressionStructure(
+                                result,
+                                LiteralType.Object);
+                            this.expressionStack.Push(newObject);
                         }
                     }
 
@@ -799,165 +1300,96 @@ namespace BurnSystems.Parser
         }
 
         /// <summary>
-        /// Executes a method on an object
-        /// </summary>
-        /// <param name="oInstance">Instance</param>
-        /// <param name="strFunctionName">Functionname</param>
-        /// <param name="aParameters">Parameters</param>
-        private static object ExecuteMethod(object oInstance, string strFunctionName, List<object> aParameters)
-        {
-            if (oInstance == null)
-            {
-                return null;
-            }
-            if (oInstance is TimeSpan)
-            {
-                oInstance = new TimeSpanHelper((TimeSpan)oInstance);
-            }
-            else if (oInstance is DateTime)
-            {
-                oInstance = new DateTimeHelper((DateTime)oInstance);
-            }
-            else if (oInstance is long)
-            {
-                oInstance = new LongHelper((long)oInstance);
-            }
-            else if (oInstance is double)
-            {
-                oInstance = new DoubleHelper((double)oInstance);
-            }
-            else
-            {
-                String strInstance = oInstance as String;
-                if (strInstance != null)
-                {
-                    oInstance = new StringHelper(strInstance);
-                }
-            }
-
-            IParserObject iParserInstance = oInstance as IParserObject;
-
-            if (iParserInstance != null)
-            {
-                return iParserInstance.ExecuteFunction(strFunctionName, aParameters);
-            }
-            else
-            {
-                // Yeah, Reflection fun
-                Type[] aoTypes = new Type[aParameters.Count];
-
-                int nCounter = 0;
-                foreach (object oParameter in aParameters)
-                {
-                    aoTypes[nCounter] = oParameter.GetType();
-                    nCounter++;
-                }
-
-                MethodInfo oMethodInfo = oInstance.GetType().GetMethod(strFunctionName, aoTypes);
-
-                if (oMethodInfo == null)
-                {
-                    return "";
-                }
-                else
-                {
-                    return oMethodInfo.Invoke(oInstance, aParameters.ToArray());
-                }
-            }
-        }
-
-        /// <summary>
         /// Writes a debug message
         /// </summary>
-        /// <param name="strString"></param>
-        private void WriteDebug(string strString)
+        /// <param name="text">Text, which should be shown</param>
+        private void WriteDebug(string text)
         {
-            if (_Debug)
+            if (this.debugActive)
             {
-                Console.WriteLine(strString);
+                Console.WriteLine(text);
             }
         }
 
         /// <summary>
         /// Evaluates the expression and stores it on the stack if necessary
         /// </summary>
-        /// <param name="strString">String to be converted to literal</param>
-        /// <param name="bOnlyDigits">Flag, if string contains only digits</param>
-        private void EvaluateLiteral(String strLiteral, bool bOnlyDigits)
+        /// <param name="literal">string to be converted to literal</param>
+        /// <param name="onlyDigits">Flag, if string contains only digits</param>
+        private void EvaluateLiteral(string literal, bool onlyDigits)
         {
-            object oLiteral;
-            LiteralType eType = LiteralType.Unknown;
+            object result;
+            LiteralType literalType = LiteralType.Unknown;
 
-            if (String.IsNullOrEmpty(strLiteral))
+            if (string.IsNullOrEmpty(literal))
             {
-                oLiteral = "";
+                result = "";
             }
-            else if (bOnlyDigits)
+            else if (onlyDigits)
             {
-                oLiteral = Convert.ToInt32(strLiteral, CultureInfo.CurrentUICulture);
-                eType = LiteralType.Integer;
+                result = Convert.ToInt32(literal, CultureInfo.CurrentUICulture);
+                literalType = LiteralType.Integer;
             }
             else
             {
-                if (strLiteral[0] == '"' && (strLiteral[strLiteral.Length - 1] == '"'))
+                if (literal[0] == '"' && (literal[literal.Length - 1] == '"'))
                 {
-                    oLiteral = strLiteral.Substring(1, strLiteral.Length - 2);
-                    eType = LiteralType.String;
+                    result = literal.Substring(1, literal.Length - 2);
+                    literalType = LiteralType.String;
                 }
-                else if (strLiteral == "false")
+                else if (literal == "false")
                 {
-                    oLiteral = false;
-                    eType = LiteralType.Boolean;
+                    result = false;
+                    literalType = LiteralType.Boolean;
                 }
-                else if (strLiteral == "true")
+                else if (literal == "true")
                 {
-                    oLiteral = true;
-                    eType = LiteralType.Boolean;
+                    result = true;
+                    literalType = LiteralType.Boolean;
                 }
-                else if (strLiteral == "null")
+                else if (literal == "null")
                 {
-                    oLiteral = null;
-                    eType = LiteralType.Object;
+                    result = null;
+                    literalType = LiteralType.Object;
                 }
                 else
                 {
                     // Evaluate Variable
-
-                    oLiteral = strLiteral;
-                    eType = LiteralType.Variable;
+                    result = literal;
+                    literalType = LiteralType.Variable;
                 }
             }
 
-            if (oLiteral != null)
+            if (result != null)
             {
-                WriteDebug(oLiteral.ToString() + " " + oLiteral.GetType().Name);
+                this.WriteDebug(result.ToString() + " " + result.GetType().Name);
             }
             else
             {
-                WriteDebug("null");
+                this.WriteDebug("null");
             }
-            _ExpressionStack.Push(new ExpressionStructure(oLiteral, eType));
+
+            this.expressionStack.Push(new ExpressionStructure(result, literalType));
         }
 
         /// <summary>
         /// Pops an object
         /// </summary>
-        /// <returns>Object</returns>
+        /// <returns>Object on stack</returns>
         private object PopObject()
         {
-            ExpressionStructure oStructure = _ExpressionStack.Pop();
-            object oObject = oStructure.Literal;
+            var structure = this.expressionStack.Pop();
+            object objectOnStack = structure.Literal;
 
-            if (oStructure.ExpressionType == LiteralType.Variable)
+            if (structure.ExpressionType == LiteralType.Variable)
             {
-                String strVariableName = (String)oObject;
+                string variableName = (string)objectOnStack;
 
                 // Resolves variable
-
-                object oResult;
-                if (_Core.Variables.TryGetValue(strVariableName, out oResult))
+                object result;
+                if (this.core.Variables.TryGetValue(variableName, out result))
                 {
-                    return oResult;
+                    return result;
                 }
                 else
                 {
@@ -965,7 +1397,7 @@ namespace BurnSystems.Parser
                 }
             }
 
-            return oObject;
+            return objectOnStack;
         }
 
         /// <summary>
@@ -974,390 +1406,90 @@ namespace BurnSystems.Parser
         /// <returns>Expression to be popped</returns>
         private ExpressionStructure PopExpressionStructure()
         {
-            return _ExpressionStack.Pop();
+            return this.expressionStack.Pop();
         }
 
         /// <summary>
-        /// Pops one integer from expressionstack
+        /// Executes the logical not function
         /// </summary>
-        /// <returns></returns>
-        public int PopInteger()
-        {
-            object oObject = PopObject();
-            if (oObject is int)
-            {
-                return (int)oObject;
-            }
-            if (oObject is IConvertible)
-            {
-                return Convert.ToInt32(oObject, CultureInfo.CurrentUICulture);
-            }
-            throw new InvalidCastException();
-        }
-
-        /// <summary>
-        /// Pops one integer from expressionstack
-        /// </summary>
-        /// <returns></returns>
-        public double PopDouble()
-        {
-            object oObject = PopObject();
-            if (oObject is double)
-            {
-                return (double)oObject;
-            }
-            if (oObject is IConvertible)
-            {
-                return Convert.ToDouble(oObject, CultureInfo.CurrentUICulture);
-            }
-            throw new InvalidCastException();
-        }
-
-        /// <summary>
-        /// Pops string from expressionstack
-        /// </summary>
-        /// <returns>String</returns>
-        public String PopString()
-        {
-            object oObject = PopObject();
-            String oString = oObject as String;
-            if (oString != null)
-            {
-                return oString;
-            }
-            return oObject.ToString();
-        }
-
-        /// <summary>
-        /// Pops a boolean
-        /// </summary>
-        /// <returns></returns>
-        public bool PopBoolean()
-        {
-            object oObject = PopObject();
-            return ConvertToBoolean(oObject);
-        }
-
-
-        /// <summary>
-        /// Evaluates operator
-        /// </summary>
-        /// <param name="strOperator">Operator</param>
-        private void EvaluateOperator(String strOperator)
-        {
-            Operator eOperator = GetOperator(strOperator);
-            int nPriority = GetOperatorPriority(eOperator) + _CurrentOperatorPriority;
-            bool bIsLeftPriority = IsLeftPriority(eOperator);
-
-            // Checks, if current operator has higher priority than operator on stack
-
-            while (_OperatorStack.Count > 0)
-            {
-                OperatorStructure oStructure = _OperatorStack.Peek();
-
-                if ((nPriority == oStructure.Priority && bIsLeftPriority) ||
-                    (nPriority < oStructure.Priority))
-                {
-                    // Execute current operator
-                    _OperatorStack.Pop();
-
-                    ExecuteOperator(oStructure.Operator);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            _OperatorStack.Push(new OperatorStructure(eOperator, nPriority));
-        }
-
-        /// <summary>
-        /// Executes operator
-        /// </summary>
-        /// <param name="eOperator">Operator to be executed</param>
-        private void ExecuteOperator(Operator eOperator)
-        {
-            WriteDebug("Execute Operator: " + eOperator.ToString());
-            switch (eOperator)
-            {
-                case Operator.Addition:
-                    ExecuteAddition();
-                    break;
-                case Operator.Subtraction:
-                    ExecuteSubtraction();
-                    break;
-                case Operator.Multiplication:
-                    ExecuteMultiplication();
-                    break;
-                case Operator.Division:
-                    ExecuteDivision();
-                    break;
-                case Operator.Concatenation:
-                    ExecuteConcatenation();
-                    break;
-                case Operator.LogicalAnd:
-                    ExecuteLogicalAnd();
-                    break;
-                case Operator.LogicalOr:
-                    ExecuteLogicalOr();
-                    break;
-                case Operator.LogicalXor:
-                    ExecuteLogicalXor();
-                    break;
-                case Operator.LogicalNot:
-                    ExecuteLogicalNot();
-                    break;
-                case Operator.And:
-                    ExecuteAnd();
-                    break;
-                case Operator.Or:
-                    ExecuteOr();
-                    break;
-                case Operator.Xor:
-                    ExecuteXor();
-                    break;
-                case Operator.Dereference:
-                    ExecuteDereference();
-                    break;
-                case Operator.Equal:
-                    ExecuteEqual();
-                    break;
-                case Operator.Greater:
-                    ExecuteGreater();
-                    break;
-                case Operator.GreaterOrEqual:
-                    ExecuteGreaterOrEqual();
-                    break;
-                case Operator.Less:
-                    ExecuteLess();
-                    break;
-                case Operator.LessOrEqual:
-                    ExecuteLessOrEqual();
-                    break;
-                case Operator.Inequal:
-                    ExecuteInequal();
-                    break;
-            }
-        }
-
-        private void ExecuteInequal()
-        {
-
-            object oA = PopObject();
-            object oB = PopObject();
-
-            bool bIsEqual = CompareObjects(oB, oA) != 0;
-            ExpressionStructure oStructure = new ExpressionStructure(bIsEqual, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
-        }
-
-        private void ExecuteLessOrEqual()
-        {
-
-            object oA = PopObject();
-            object oB = PopObject();
-
-            bool bIsEqual = CompareObjects(oB, oA) <= 0;
-            ExpressionStructure oStructure = new ExpressionStructure(bIsEqual, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
-        }
-
-        private void ExecuteLess()
-        {
-
-            object oA = PopObject();
-            object oB = PopObject();
-
-            bool bIsEqual = CompareObjects(oB, oA) < 0;
-            ExpressionStructure oStructure = new ExpressionStructure(bIsEqual, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
-        }
-
-        private void ExecuteGreaterOrEqual()
-        {
-
-            object oA = PopObject();
-            object oB = PopObject();
-
-            bool bIsEqual = CompareObjects(oB, oA) >= 0;
-            ExpressionStructure oStructure = new ExpressionStructure(bIsEqual, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
-        }
-
-        private void ExecuteGreater()
-        {
-
-            object oA = PopObject();
-            object oB = PopObject();
-
-            bool bIsEqual = CompareObjects(oB, oA) > 0;
-            ExpressionStructure oStructure = new ExpressionStructure(bIsEqual, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
-        }
-
-        private void ExecuteEqual()
-        {
-            object oA = PopObject();
-            object oB = PopObject();
-
-            bool bIsEqual = CompareObjects(oB, oA) == 0;
-            ExpressionStructure oStructure = new ExpressionStructure(bIsEqual, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
-        }
-
-        /// <summary>
-        /// Makes a dereference
-        /// </summary>
-        private void ExecuteDereference()
-        {
-            ExpressionStructure oStructure = PopExpressionStructure();
-            String strMethod = (String)oStructure.Literal;
-
-            object oObject = PopObject();
-            IList iList = oObject as IList;
-
-            if (oObject == null)
-            {
-                _ExpressionStack.Push(
-                    new ExpressionStructure(
-                        null, LiteralType.Object));
-                return;
-            }
-            else if (oObject is int)
-            {
-                // Creates int helper object
-            }
-            else if (oObject is double)
-            {
-                oObject = new DoubleHelper((double)oObject);
-            }
-            else if (oObject is long)
-            {
-                oObject = new LongHelper((long)oObject);
-            }
-            else if (oObject is TimeSpan)
-            {
-                oObject = new TimeSpanHelper((TimeSpan)oObject);
-            }
-            else if (oObject is DateTime)
-            {
-                oObject = new DateTimeHelper((DateTime)oObject);
-            }
-            else if (iList != null)
-            {
-                oObject = new IListHelper(iList);
-            }
-            else
-            {
-                String strObject = oObject as String;
-                if (strObject != null)
-                {
-                    oObject = new StringHelper(strObject);
-                }
-            }
-
-            IParserObject iParserObject = oObject as IParserObject;
-            IDictionary iDictionary = oObject as IDictionary;
-            IParserDictionary iParserDictionary = oObject as IParserDictionary;
-            if (iParserObject != null)
-            {
-                _ExpressionStack.Push(
-                    new ExpressionStructure(
-                        iParserObject.GetProperty(strMethod), LiteralType.Object));
-            }
-            else if (iDictionary != null)
-            {
-                _ExpressionStack.Push(new ExpressionStructure(
-                    iDictionary[strMethod],
-                    LiteralType.Object
-                ));
-            }
-            else if (iParserDictionary != null)
-            {
-                _ExpressionStack.Push(new ExpressionStructure(
-                    iParserDictionary[strMethod],
-                    LiteralType.Object
-                ));
-            }
-            else
-            {
-                // Do reflections
-
-                Type oType = oObject.GetType();
-                PropertyInfo oProperty = oType.GetProperty(strMethod);
-                object oResult = "";
-
-                if (oProperty != null)
-                {
-                    oResult = oProperty.GetValue(oObject, null);
-                }
-                _ExpressionStack.Push(
-                    new ExpressionStructure(
-                        oResult, LiteralType.Object));
-            }
-        }
-
         private void ExecuteLogicalNot()
         {
-            bool nA = PopBoolean();
+            bool nA = this.PopBoolean();
 
-            ExpressionStructure oStructure = new ExpressionStructure(!nA, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(!nA, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
         }
 
+        /// <summary>
+        /// Executes the xor function
+        /// </summary>
         private void ExecuteXor()
         {
-            int nA = PopInteger();
-            int nB = PopInteger();
+            int nA = this.PopInteger();
+            int nB = this.PopInteger();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nA ^ nB, LiteralType.Integer);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nA ^ nB, LiteralType.Integer);
+            this.expressionStack.Push(structure);
         }
 
+        /// <summary>
+        /// Executes the or function
+        /// </summary>
         private void ExecuteOr()
         {
-            int nA = PopInteger();
-            int nB = PopInteger();
+            int nA = this.PopInteger();
+            int nB = this.PopInteger();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nA | nB, LiteralType.Integer);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nA | nB, LiteralType.Integer);
+            this.expressionStack.Push(structure);
         }
 
+        /// <summary>
+        /// Executes the and function
+        /// </summary>
         private void ExecuteAnd()
         {
-            int nA = PopInteger();
-            int nB = PopInteger();
+            int nA = this.PopInteger();
+            int nB = this.PopInteger();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nA & nB, LiteralType.Integer);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nA & nB, LiteralType.Integer);
+            this.expressionStack.Push(structure);
         }
 
+        /// <summary>
+        /// Executes the logical-xor function
+        /// </summary>
         private void ExecuteLogicalXor()
         {
-            bool nA = PopBoolean();
-            bool nB = PopBoolean();
+            bool nA = this.PopBoolean();
+            bool nB = this.PopBoolean();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nA ^ nB, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nA ^ nB, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
         }
 
+        /// <summary>
+        /// Executes the logical-or function
+        /// </summary>
         private void ExecuteLogicalOr()
         {
-            bool nA = PopBoolean();
-            bool nB = PopBoolean();
+            bool nA = this.PopBoolean();
+            bool nB = this.PopBoolean();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nA || nB, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nA || nB, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
         }
 
+        /// <summary>
+        /// Executes the logical-and function
+        /// </summary>
         private void ExecuteLogicalAnd()
         {
-            bool nA = PopBoolean();
-            bool nB = PopBoolean();
+            bool nA = this.PopBoolean();
+            bool nB = this.PopBoolean();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nA && nB, LiteralType.Boolean);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nA && nB, LiteralType.Boolean);
+            this.expressionStack.Push(structure);
         }
 
         /// <summary>
@@ -1365,10 +1497,10 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteAddition()
         {
-            int nA = PopInteger();
-            int nB = PopInteger();
-            ExpressionStructure oStructure = new ExpressionStructure(nA + nB, LiteralType.Integer);
-            _ExpressionStack.Push(oStructure);
+            int nA = this.PopInteger();
+            int nB = this.PopInteger();
+            var structure = new ExpressionStructure(nA + nB, LiteralType.Integer);
+            this.expressionStack.Push(structure);
         }
 
         /// <summary>
@@ -1376,10 +1508,10 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteSubtraction()
         {
-            int nA = PopInteger();
-            int nB = PopInteger();
-            ExpressionStructure oStructure = new ExpressionStructure(nB - nA, LiteralType.Integer);
-            _ExpressionStack.Push(oStructure);
+            int nA = this.PopInteger();
+            int nB = this.PopInteger();
+            var structure = new ExpressionStructure(nB - nA, LiteralType.Integer);
+            this.expressionStack.Push(structure);
         }
 
         /// <summary>
@@ -1387,24 +1519,24 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteMultiplication()
         {
-            object oA = PopObject();
-            object oB = PopObject();
+            object oA = this.PopObject();
+            object oB = this.PopObject();
 
             if (oA is double || oB is double)
             {
                 double dA = Convert.ToDouble(oA, CultureInfo.CurrentUICulture);
                 double dB = Convert.ToDouble(oB, CultureInfo.CurrentUICulture);
-                ExpressionStructure oStructure =
+                var structure =
                     new ExpressionStructure(dA * dB, LiteralType.Integer);
-                _ExpressionStack.Push(oStructure);
+                this.expressionStack.Push(structure);
             }
             else
             {
                 int nA = Convert.ToInt32(oA, CultureInfo.CurrentUICulture);
                 int nB = Convert.ToInt32(oB, CultureInfo.CurrentUICulture);
-                ExpressionStructure oStructure =
+                var structure =
                     new ExpressionStructure(nA * nB, LiteralType.Integer);
-                _ExpressionStack.Push(oStructure);
+                this.expressionStack.Push(structure);
             }
         }
 
@@ -1413,10 +1545,10 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteDivision()
         {
-            int nA = PopInteger();
-            int nB = PopInteger();
-            ExpressionStructure oStructure = new ExpressionStructure(nB / nA, LiteralType.Integer);
-            _ExpressionStack.Push(oStructure);
+            int nA = this.PopInteger();
+            int nB = this.PopInteger();
+            var structure = new ExpressionStructure(nB / nA, LiteralType.Integer);
+            this.expressionStack.Push(structure);
         }
 
         /// <summary>
@@ -1424,11 +1556,81 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteConcatenation()
         {
-            String nA = PopString();
-            String nB = PopString();
+            string nA = this.PopString();
+            string nB = this.PopString();
 
-            ExpressionStructure oStructure = new ExpressionStructure(nB + nA, LiteralType.String);
-            _ExpressionStack.Push(oStructure);
+            var structure = new ExpressionStructure(nB + nA, LiteralType.String);
+            this.expressionStack.Push(structure);
+        }
+        
+        /// <summary>
+        /// Structure for expressions
+        /// </summary>
+        private class ExpressionStructure
+        {
+            /// <summary>
+            /// Creates new expressiontype
+            /// </summary>
+            /// <param name="literal">Literal for the type</param>
+            /// <param name="type">Type for the type</param>
+            public ExpressionStructure(object literal, LiteralType type)
+            {
+                this.Literal = literal;
+                this.ExpressionType = type;
+            }
+
+            /// <summary>
+            /// Gets or sets the literal in the structure
+            /// </summary>
+            public object Literal
+            {
+                get;
+                set;
+            }
+
+            /// <summary>
+            /// Gets or sets the current expressiontype
+            /// </summary>
+            public LiteralType ExpressionType
+            {
+                get;
+                set;
+            }
+        }
+
+        /// <summary>
+        /// Operator structure
+        /// </summary>
+        private class OperatorStructure
+        {
+            /// <summary>
+            /// Creates new operator structure
+            /// </summary>
+            /// <param name="operatorStructure">Operator for the current structure</param>
+            /// <param name="priority">Priority for the operator</param>
+            public OperatorStructure(Operator operatorStructure, int priority)
+            {
+                this.Operator = operatorStructure;
+                this.Priority = priority;
+            }
+
+            /// <summary>
+            /// Gets or sets the operator of the current structure
+            /// </summary>
+            public Operator Operator
+            {
+                get;
+                set;
+            }
+
+            /// <summary>
+            /// Gets or sets the value of the property
+            /// </summary>
+            public int Priority
+            {
+                get;
+                set;
+            }
         }
     }
 }
