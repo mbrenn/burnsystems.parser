@@ -9,19 +9,18 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace BurnSystems.Parser
 {
+    using BurnSystems.Test;
+
     /// <summary>
     /// Dieser Delegat wird genutzt um eine eigene Behandlung von Kommandos
     /// durchzuführen
     /// </summary>
-    /// <param name="strCommand">Kommando</param>
+    /// <param name="command">Command to be executed</param>
+    /// <param name="endPosition">End position of command</param>
     /// <returns>Ergebnis, welcher in die Vorlage eingefügt wird</returns>
-    public delegate String ExecuteCommand (String strCommand, int nEndPosition);
+    public delegate string ExecuteCommand(string command, int endPosition);
 
     /// <summary>
     /// Dieser Parser wird genutzt, um eine eigene Behandlung der
@@ -29,30 +28,30 @@ namespace BurnSystems.Parser
     /// </summary>
     public class UserCommandTemplateParser : TemplateParser
     {
-        ExecuteCommand _ExecuteCommandDelegate;
+        /// <summary>
+        /// The delegate of command
+        /// </summary>
+        private ExecuteCommand executeCommandDelegate;
 
         /// <summary>
         /// Erzeugt eine neue Instanz
         /// </summary>
-        /// <param name="oDelegate"></param>
-        public UserCommandTemplateParser(ExecuteCommand oDelegate)
+        /// <param name="commandDelegate">Command delegation</param>
+        public UserCommandTemplateParser(ExecuteCommand commandDelegate)
         {
-            if (oDelegate == null)
-            {
-                throw new ArgumentNullException("oDelegate");
-            }
-            _ExecuteCommandDelegate = oDelegate;
+            Ensure.IsNotNull(commandDelegate);
+            this.executeCommandDelegate = commandDelegate;
         }
 
         /// <summary>
-        /// Lüsst ein Kommando vom Delegaten ausführen
+        /// Lässt ein Kommando vom Delegaten ausführen
         /// </summary>
-        /// <param name="strCommand"></param>
-        /// <param name="nEndPosition"></param>
-        /// <returns></returns>
-        protected override bool ExecuteCommand(string strCommand, int nEndPosition)
+        /// <param name="command">Command to be executed</param>
+        /// <param name="endPosition">End position</param>
+        /// <returns>false, because offset is not changed</returns>
+        protected override bool ExecuteCommand(string command, int endPosition)
         {
-            Result.Append(_ExecuteCommandDelegate(strCommand, nEndPosition));
+            this.Result.Append(this.executeCommandDelegate(command, endPosition));
             return false;
         }
     }
