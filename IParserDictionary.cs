@@ -9,12 +9,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace BurnSystems.Parser
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+
     /// <summary>
     /// Dieses Interface kann von Objekten genutzt werden, die für den Parser
     /// eine Zugriffsfunktionalität über Felder ermöglichen sollte. 
@@ -25,9 +25,9 @@ namespace BurnSystems.Parser
         /// Diese Methode wird aufgerufen, wenn ein Feld dieser Variable aufgelöst 
         /// werden soll.
         /// </summary>
-        /// <param name="strKey">Schlüssel</param>
-        /// <returns>Zurückgegebenes Objekt</returns>
-        object this[String strKey]
+        /// <param name="name">Name of object</param>
+        /// <returns>Returned object</returns>
+        object this[string name]
         {
             get;
         }
