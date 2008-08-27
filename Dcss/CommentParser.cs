@@ -9,12 +9,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace BurnSystems.Parser.Dcss
 {
+    using System;
+    using System.Text;
+
     /// <summary>
     /// Mit Hilfe dieses Parser können Kommentare aus
     /// verschiedenen Quelldateien herausgenommen werden.
@@ -26,53 +25,56 @@ namespace BurnSystems.Parser.Dcss
         /// dass alle Kommentare in der Syntax /* comment */ 
         /// entfernt werden. 
         /// </summary>
-        /// <param name="strInput">Eingangsstring</param>
+        /// <param name="inputText">Source code, which should be 
+        /// stripped. </param>
         /// <returns>Ergebnis ohne Kommentare</returns>
-        public static String StripStarComments(String strInput)
+        public static string StripStarComments(string inputText)
         {
-            var bInComment = false;
-            var cLastCharacter = ' ';
-            var nCurrentPosition = 0;
-            var nLength = strInput.Length;
-            var oResult = new StringBuilder();
-            var bFirst = true;
+            var commentActive = false;
+            var lastCharacter = ' ';
+            var currentPosition = 0;
+            var length = inputText.Length;
+            var result = new StringBuilder();
+            var first = true;
 
-            while (nCurrentPosition < nLength)
+            while (currentPosition < length)
             {
-                var cCurrentCharacter = strInput[nCurrentPosition];
+                var currentCharacter = inputText[currentPosition];
 
-                if (bInComment)
+                if (commentActive)
                 {
-                    if (cLastCharacter == '*' &&
-                        cCurrentCharacter == '/')
+                    if (lastCharacter == '*' &&
+                        currentCharacter == '/')
                     {
-                        bInComment = false;
-                        bFirst = true;
+                        commentActive = false;
+                        first = true;
                     }
                 }
                 else
                 {
-                    if (cLastCharacter == '/' &&
-                        cCurrentCharacter == '*')
+                    if (lastCharacter == '/' &&
+                        currentCharacter == '*')
                     {
-                        bInComment = true;
+                        commentActive = true;
                     }
-                    else if (!bFirst)
+                    else if (!first)
                     {
-                        oResult.Append(cLastCharacter);
+                        result.Append(lastCharacter);
                     }
-                    bFirst = false;                  
+
+                    first = false;                  
                 }
 
-                cLastCharacter = cCurrentCharacter;
-                nCurrentPosition++;
-            }
-            if (!bInComment && !bFirst)
-            {
-                oResult.Append(cLastCharacter);
+                lastCharacter = currentCharacter;
+                currentPosition++;
             }
 
-            return oResult.ToString();
+            if (!commentActive && !first)
+            {
+                result.Append(lastCharacter);
+            }
+
+            return result.ToString();
         }
     }
 }

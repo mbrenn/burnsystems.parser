@@ -9,31 +9,71 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Diagnostics;
-using System.Globalization;
-
 namespace BurnSystems.Parser.Dcss
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.IO;
+    using System.Text;
+    using BurnSystems.Test;
+
     /// <summary>
     /// Kontext, in dem sich der Parser aktuell befindet. 
     /// Die Namen richten sich nach der Spezifikation gemäß
     /// CSS 2.1 Kapitel 4.1.1
     /// </summary>
-    enum ParsingContext
+    internal enum ParsingContext
     {
+        /// <summary>
+        /// Stylesheet parsing mode
+        /// </summary>
         Stylesheet,
+
+        /// <summary>
+        /// Statement parsing mode
+        /// </summary>
         Statement,
+
+        /// <summary>
+        /// At rule parsing mode
+        /// </summary>
         AtRule,
+
+        /// <summary>
+        /// Block parsing mode
+        /// </summary>
         Block,
+
+        /// <summary>
+        /// Ruleset parsing mode
+        /// </summary>
         Ruleset,
+
+        /// <summary>
+        /// Selector parsing mode
+        /// </summary>
         Selector,
+
+        /// <summary>
+        /// Declaration parsing mode
+        /// </summary>
         Declaration,
+
+        /// <summary>
+        /// Property parsing mode
+        /// </summary>
         Property,
+
+        /// <summary>
+        /// Value parsing mode
+        /// </summary>
         Value,
+
+        /// <summary>
+        /// Any parsing mode
+        /// </summary>
         Any
     }
 
@@ -47,38 +87,43 @@ namespace BurnSystems.Parser.Dcss
         /// Flag, ob eine Debug-Ausgabe auf die Konsole
         /// gebracht werden soll. 
         /// </summary>
-        bool _Debug;
+        private bool debug;
 
         /// <summary>
-        /// Flag, ob eine Debug-Ausgabe auf die Konsole
-        /// gebracht werden soll. 
+        /// Variables defined in dcss
         /// </summary>
-        public bool DebugActive
-        {
-            get { return _Debug; }
-            set { _Debug = value; }
-        }
-
-        /// <summary>
-        /// Variablen
-        /// </summary>
-        Dictionary<String, String> _Variables =
+        private Dictionary<string, string> variables =
             new Dictionary<string, string>();
 
         /// <summary>
         /// Speichert das Resultat des Konverters
         /// </summary>
-        StringBuilder _Result = new StringBuilder();
-
+        private StringBuilder result = new StringBuilder();
+        
         /// <summary>
         /// Dieser Textreader enthält den Quellstring
         /// </summary>
-        String _Input;
+        private string inputString;
 
         /// <summary>
         /// Aktuelle Position während des Parsevorgangs
         /// </summary>
-        int _CurrentPosition;
+        private int currentPosition;
+
+        /// <summary>
+        /// Dieses Objekt wird geworfen, wenn ein neues Ruleset-Objekt
+        /// geparst wurde. 
+        /// </summary>
+        private RulesetPropertyValueHandler rulesetPropertyValueParsed;
+
+        /// <summary>
+        /// Delegate, which is called, when a property was parsed
+        /// </summary>
+        /// <param name="property">Property for ruleset</param>
+        /// <param name="value">Value for ruleset</param>
+        private delegate void RulesetPropertyValueHandler(
+            string property,
+            string value);
 
         // <summary>
         // Dies ist der zu parsende Reststring. Diese Funktion
@@ -98,418 +143,53 @@ namespace BurnSystems.Parser.Dcss
         }*/
 
         /// <summary>
+        /// Gets or sets a value indicating whether debugstrings
+        /// should be sent to console
+        /// </summary>
+        public bool DebugActive
+        {
+            get { return this.debug; }
+            set { this.debug = value; }
+        }
+
+        /// <summary>
         /// Konvertiert eine Datei
         /// </summary>
-        /// <param name="strFile">Die zu lesende Datei</param>
+        /// <param name="fileContent">Die zu lesende Datei</param>
         /// <returns>Gibt die resultierende Datei als String 
         /// zurück</returns>
-        public String Convert(String strFile)
+        public string Convert(string fileContent)
         {
-            if (strFile == null)
+            if (fileContent == null)
             {
                 throw new ArgumentNullException("strFile");
             }
-            _Input = CommentParser.StripStarComments(strFile);
 
-            ConvertStylesheet();
+            this.inputString = CommentParser.StripStarComments(fileContent);
 
-            return _Result.ToString();
+            this.ConvertStylesheet();
+
+            return this.result.ToString();
         }
 
         /// <summary>
         /// Konvertiert den Inhalt eines Textreaders und gibt 
         /// einen neuen Textreader mit dem Inhalt der CSS-Datei zurück
         /// </summary>
-        /// <param name="oReader">Textreader, der die DCSS-Datei
+        /// <param name="textReader">Textreader, der die DCSS-Datei
         /// gespeichert hat</param>
         /// <returns>Textreader, der die resultierende CSS-Datei 
         /// speichert.</returns>
-        public TextReader Convert(TextReader oReader)
+        public TextReader Convert(TextReader textReader)
         {            
-            return new StringReader(Convert(oReader.ReadToEnd()));
-        }
-
-        /// <summary>
-        /// Parst den String als Stylesheet und ruft die jeweiligen
-        /// Kontext-Funktionen auf. 
-        /// </summary>
-        private void ConvertStylesheet()
-        {            
-            var nLength = _Input.Length;
-            _Result.Append(GetWhitespaces());
-            while (_CurrentPosition < nLength)
-            {
-                var cCurrentCharacter = _Input[_CurrentPosition];
-
-                if (cCurrentCharacter == '@')
-                {
-                    _Result.Append(ParseAtRule());
-                }
-                else if (IsAny(cCurrentCharacter))
-                {
-                    _Result.Append(ParseRuleset());
-                }
-                else
-                {
-                    _Result.Append(cCurrentCharacter);
-                    _CurrentPosition++;
-                }
-                _Result.Append(GetWhitespaces());
-            }
-        }
-
-        /// <summary>
-        /// Liest eine AtRule ein
-        /// </summary>
-        private String ParseAtRule()
-        {
-            _CurrentPosition++;
-            // Habe nun das Ende der At Rule
-            var strAtRuleName = GetIdent();
-
-            // Holt sich nun den Rest
-            String strWhitespaces = GetWhitespaces();
-
-            // Holt sich das 'Any'
-            String strAny = GetAny();
-
-            // Überspringt weitere Whitespaces
-            String strWhitespaces2 = GetWhitespaces();
-
-            // Überprüft, ob das aktuelle Symbol ein ';' oder ein 
-            // Block ist
-
-            String strRest;
-            if (_Input[_CurrentPosition] == ';')
-            {
-                // Semikolon
-                strRest = ";";
-            }
-            else
-            {
-                if (strAtRuleName.Trim() == "dcssdefine")
-                {
-                    ParseDCSSDefineBlock();
-                    return String.Empty;
-                }
-                else
-                {
-                    // Block
-                    strRest = GetBlock();
-                }
-            }
-
-            WriteDebug("At-Rule: " + strAtRuleName);
-            // Gibt die gesamte AtRule zurück
-            return String.Format(
-                CultureInfo.InvariantCulture,
-                "@{0}{1}{2}{3}{4}",
-                strAtRuleName, strWhitespaces,
-                    strAny, strWhitespaces2, strRest);
-        }
-
-        /// <summary>
-        /// Diese Funktion gibt einen kompletten Block zurück, 
-        /// es wird sich nur auf die geschweiften Klammern, eventuellen
-        /// Kommentaren und Anführungszeichen. Der Inhalt selbst wird
-        /// nicht verstanden. 
-        /// </summary>
-        /// <returns></returns>
-        private string GetBlock()
-        {
-            var oBlock = new StringBuilder();
-            // Aktuelle Blocktiefe
-            int nBlockDepth = 1;
-            // Flag, ob sich der Parser gerade im Quote befindet
-            bool bInQuote = false;
-            // Flag, ob das letzte Zeichen ein Escape-Character war
-            bool bEscaped = false;
-            
-            // Das erste Zeichen muss ein '{' sein. 
-            if (_Input[_CurrentPosition] != '{')
-            {
-                Debug.Fail("_Input[_CurrentPosition ] != '{'");
-            }
-            _CurrentPosition++;
-            oBlock.Append('{');
-
-            while (_CurrentPosition < _Input.Length)
-            {
-                var cCurrentCharacter = _Input[_CurrentPosition];
-
-                if (bInQuote)
-                {
-                    // Ist in quote. 
-                    if (bEscaped)
-                    {
-                        bEscaped = false;
-                    }
-                    else if (cCurrentCharacter == '"')
-                    {
-                        bInQuote = false;
-                    }
-                    else if (cCurrentCharacter == '\\')
-                    {
-                        bEscaped = true;
-                    }
-                }
-                else if (cCurrentCharacter == '}')
-                {
-                    nBlockDepth--;
-                    if (nBlockDepth <= 0)
-                    {
-                        break;
-                    }
-                }
-                else if (cCurrentCharacter == '{')
-                {
-                    nBlockDepth++;
-                }
-
-                oBlock.Append(cCurrentCharacter);
-                _CurrentPosition++;
-            }
-
-            var strBlock = oBlock.ToString();
-            WriteDebug("Block: " + strBlock);
-
-            return strBlock;
-        }
-
-        delegate void RulesetPropertyValueHandler
-            (String strProperty, String strValue);
-
-        /// <summary>
-        /// Dieses Objekt wird geworfen, wenn ein neues Ruleset-Objekt
-        /// geparst wurde. 
-        /// </summary>
-        RulesetPropertyValueHandler RulesetPropertyValueParsed;
-
-        /// <summary>
-        /// Parst ein Regelwerk
-        /// </summary>
-        /// <returns></returns>
-        private String ParseRuleset()
-        {
-            // Lädt den Selektor ein
-            var strSelector = GetSelector();
-
-            WriteDebug("Selector: " + strSelector);
-
-            var oRules = ParseRulesetBlock();
-
-            return String.Format(
-                CultureInfo.InvariantCulture,
-                "{0}{1}{2}", strSelector, '{', oRules.ToString());
-        }
-
-        /// <summary>
-        /// Parst den Block des Regelwerks
-        /// </summary>
-        /// <returns>Der zu parsende Rulesetblock</returns>
-        private StringBuilder ParseRulesetBlock()
-        {
-            // Nun folgt die OpenBracket
-            Debug.Assert(_Input[_CurrentPosition] == '{');
-
-            _CurrentPosition++;
-
-            // Nun folgen die einzelnen Eigenschaften. 
-            // Diese sind relativ simpel zu parsen: 
-            // S* property S* ':' S* value;
-
-            var oRules = new StringBuilder();
-
-            while (_CurrentPosition < _Input.Length)
-            {
-                oRules.Append(GetWhitespaces());
-                if (_CurrentPosition >= _Input.Length)
-                {
-                    // Ende
-                    break;
-                }
-
-                if (_Input[_CurrentPosition] == '}')
-                {
-                    // Schließende Klammer.
-                    oRules.Append('}');
-                    _CurrentPosition++;
-                    break;
-                }
-                else if (_Input[_CurrentPosition] == ';')
-                {
-                    oRules.Append(';');
-                    _CurrentPosition++;
-                }
-                else
-                {
-                    // Suche nun den Doppelpunkt
-                    int nColon = _Input.IndexOf(':', _CurrentPosition);
-                    Debug.Assert(nColon != -1, "No Colon in property found");
-                    if (nColon == -1)
-                    {
-                        // Abbruch, um Endlosschleife zu verhindern
-                        _CurrentPosition = _Input.Length;
-                        break;
-                    }
-
-                    // Suche nun Das Semikolon oder die schließende Klammer
-                    int nSemikolon = _Input.IndexOf(';', nColon);
-                    int nClosingBracket = _Input.IndexOf('}', nColon);
-
-                    int nEndValue;
-                    if (nSemikolon == -1)
-                    {
-                        nEndValue = nClosingBracket;
-                    }
-                    else
-                    {
-                        nEndValue = Math.Min(nClosingBracket, nSemikolon);
-                    }
-                    Debug.Assert(nEndValue != -1, "No end in Converter");
-                    if (nEndValue == -1 || nColon == -1)
-                    {
-                        // Abbruch, um Endlosschleife zu verhindern
-                        _CurrentPosition = _Input.Length;
-                        break;
-                    }
-
-                    // Nun werden die Daten geholt. 
-
-                    String strProperty =
-                        _Input.Substring(
-                            _CurrentPosition,
-                            nColon - _CurrentPosition);
-                    String strValue =
-                        _Input.Substring(
-                            nColon + 1,
-                            nEndValue - nColon - 1);
-
-                    if (RulesetPropertyValueParsed != null)
-                    {
-                        RulesetPropertyValueParsed(strProperty, strValue);
-                    }
-
-                    WriteDebug(strProperty + ": " + strValue);
-
-                    // Füge nun die Variablen ein. 
-
-                    if (strValue.IndexOf('[') != -1)
-                    {
-                        foreach (var oPair in _Variables)
-                        {
-                            strValue =
-                                strValue.Replace(
-                                    String.Format(CultureInfo.InvariantCulture, "[{0}]", oPair.Key),
-                                    oPair.Value);
-                        }
-                    }
-
-                    // Und baue den Spaß wieder zusammen
-                    oRules.AppendFormat("{0}:{1}", strProperty, strValue);
-
-                    _CurrentPosition = nEndValue;
-                }
-
-            }
-            return oRules;
-        }
-
-        /// <summary>
-        /// Parst einen Block und setzt die Variablen
-        /// </summary>
-        /// <param name="strRest"></param>
-        private void ParseDCSSDefineBlock()
-        {
-            RulesetPropertyValueParsed =
-                delegate(String strProperty, String strValue)
-                {
-                    WriteDebug("Set Variable: " + strProperty);
-                    _Variables[strProperty.Trim()] = strValue.Trim();
-                };
-
-            ParseRulesetBlock();
-        }
-
-        /// <summary>
-        /// Gibt den Selektor zurück
-        /// </summary>
-        /// <returns></returns>
-        private string GetSelector()
-        {
-            int nOpenBracket =
-                _Input.IndexOf('{', _CurrentPosition);
-
-            if (nOpenBracket == -1)
-            {
-                Debug.Fail("No open bracket after Selector");
-                return String.Empty;
-            }
-
-            var strSelector =
-                _Input.Substring(_CurrentPosition,
-                     nOpenBracket - _CurrentPosition);
-            _CurrentPosition = nOpenBracket;
-            return strSelector;
-        }
-
-        /// <summary>
-        /// Gibt 'ANY' zurück
-        /// </summary>
-        /// <returns></returns>
-        private string GetAny()
-        {
-            return GetByPredicate(
-                x => IsAny(x));
-        }
-
-        /// <summary>
-        /// Gibt einen Identifikationstring zurück
-        /// </summary>
-        /// <returns></returns>
-        private string GetIdent()
-        {
-            return
-                GetByPredicate(
-                    x => Char.IsLetterOrDigit(x) || (int)x > 177);
-        }
-
-        private String GetWhitespaces()
-        {
-            return
-               GetByPredicate(
-                   x =>
-                       x == ' '
-                       || x == '\r'
-                       || x == '\t'
-                       || x == '\n'
-                       || x == '\f');
-        }
-
-        private String GetByPredicate(Predicate<char> oPredicate)
-        {
-            StringBuilder oIdentification = new StringBuilder();
-            while (_CurrentPosition < _Input.Length)
-            {
-                var cCharacter = _Input[_CurrentPosition];
-                if (oPredicate(cCharacter))
-                {
-                    oIdentification.Append(cCharacter);
-                }
-                else
-                {
-                    break;
-                }
-                _CurrentPosition++;
-            }
-            return oIdentification.ToString();
+            return new StringReader(this.Convert(textReader.ReadToEnd()));
         }
 
         /// <summary>
         /// Diese Funktion gibt true zurück, wenn der übergebene Character
         /// einen 'any'-Wert gemäß CSS 2.1-Spezifikation entspricht. 
         /// </summary>
-        /// <param name="cCharacter">Zu prüfendes Zeichen</param>
+        /// <param name="character">Zu prüfendes Zeichen</param>
         /// <remarks>
         /// Gemäß CSS-Spezifikation: 
         /// <code>
@@ -520,28 +200,416 @@ namespace BurnSystems.Parser.Dcss
         /// | '(' S* any* ')' | '[' S* any* ']' ] S*;
         /// </code>
         /// </remarks>
-        /// <returns>true. </returns>
-        static private bool IsAny(char cCharacter)
+        /// <returns>Returns, if character is one of the set 
+        /// of 'any'-Characters</returns>
+        private static bool IsAny(char character)
         {
             // ANY ist alles, außer:
             // ATKEYWORD, \;, \{, \}, 
             // Einfach zu prüfen.
+            return !(character == '@' || character == '{' ||
+                character == '}' || character == ';');
+        }
 
-            return !(cCharacter == '@' || cCharacter == '{' ||
-                cCharacter == '}' || cCharacter == ';');
+        /// <summary>
+        /// Parst den String als Stylesheet und ruft die jeweiligen
+        /// Kontext-Funktionen auf. 
+        /// </summary>
+        private void ConvertStylesheet()
+        {
+            var length = this.inputString.Length;
+            this.result.Append(this.GetWhitespaces());
+            while (this.currentPosition < length)
+            {
+                var currentCharacter = this.inputString[this.currentPosition];
+
+                if (currentCharacter == '@')
+                {
+                    this.result.Append(this.ParseAtRule());
+                }
+                else if (IsAny(currentCharacter))
+                {
+                    this.result.Append(this.ParseRuleset());
+                }
+                else
+                {
+                    this.result.Append(currentCharacter);
+                    this.currentPosition++;
+                }
+
+                this.result.Append(this.GetWhitespaces());
+            }
+        }
+
+        /// <summary>
+        /// Liest eine AtRule ein
+        /// </summary>
+        /// <returns>Returns the at rule</returns>
+        private string ParseAtRule()
+        {
+            this.currentPosition++;
+
+            // Habe nun das Ende der At Rule
+            var atruleName = this.GetIdent();
+
+            // Holt sich nun den Rest
+            string whitespaces = this.GetWhitespaces();
+
+            // Holt sich das 'Any'
+            string any = this.GetAny();
+
+            // Überspringt weitere Whitespaces
+            string whitespaces2 = this.GetWhitespaces();
+
+            // Überprüft, ob das aktuelle Symbol ein ';' oder ein 
+            // Block ist
+            string rest;
+            if (this.inputString[this.currentPosition] == ';')
+            {
+                // Semikolon
+                rest = ";";
+            }
+            else
+            {
+                if (atruleName.Trim() == "dcssdefine")
+                {
+                    this.ParseDCSSDefineBlock();
+                    return String.Empty;
+                }
+                else
+                {
+                    // Block
+                    rest = this.GetBlock();
+                }
+            }
+
+            this.WriteDebug("At-Rule: " + atruleName);
+
+            // Gibt die gesamte AtRule zurück
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "@{0}{1}{2}{3}{4}",
+                atruleName,
+                whitespaces,
+                any,
+                whitespaces2,
+                rest);
+        }
+
+        /// <summary>
+        /// Diese Funktion gibt einen kompletten Block zurück, 
+        /// es wird sich nur auf die geschweiften Klammern, eventuellen
+        /// Kommentaren und Anführungszeichen. Der Inhalt selbst wird
+        /// nicht verstanden. 
+        /// </summary>
+        /// <returns>Returns the block</returns>
+        private string GetBlock()
+        {
+            var block = new StringBuilder();
+
+            // Aktuelle Blocktiefe
+            int blockDepth = 1;
+
+            // Flag, ob sich der Parser gerade im Quote befindet
+            bool quoteActive = false;
+
+            // Flag, ob das letzte Zeichen ein Escape-Character war
+            bool escaped = false;
+            
+            // Das erste Zeichen muss ein '{' sein. 
+            if (this.inputString[this.currentPosition] != '{')
+            {
+                Debug.Fail("inputString[currentPosition ] != '{'");
+            }
+
+            this.currentPosition++;
+            block.Append('{');
+
+            while (this.currentPosition < this.inputString.Length)
+            {
+                var currentCharacter = this.inputString[this.currentPosition];
+
+                if (quoteActive)
+                {
+                    // Ist in quote. 
+                    if (escaped)
+                    {
+                        escaped = false;
+                    }
+                    else if (currentCharacter == '"')
+                    {
+                        quoteActive = false;
+                    }
+                    else if (currentCharacter == '\\')
+                    {
+                        escaped = true;
+                    }
+                }
+                else if (currentCharacter == '}')
+                {
+                    blockDepth--;
+                    if (blockDepth <= 0)
+                    {
+                        break;
+                    }
+                }
+                else if (currentCharacter == '{')
+                {
+                    blockDepth++;
+                }
+
+                block.Append(currentCharacter);
+                this.currentPosition++;
+            }
+
+            var blockString = block.ToString();
+            this.WriteDebug("Block: " + blockString);
+
+            return blockString;
+        }
+
+        /// <summary>
+        /// Parst ein Regelwerk
+        /// </summary>
+        /// <returns>Parsed ruleset</returns>
+        private string ParseRuleset()
+        {
+            // Lädt den Selektor ein
+            var selector = this.GetSelector();
+
+            this.WriteDebug("Selector: " + selector);
+
+            var rules = this.ParseRulesetBlock();
+
+            return String.Format(
+                CultureInfo.InvariantCulture,
+                "{0}{1}{2}", 
+                selector, 
+                '{', 
+                rules.ToString());
+        }
+
+        /// <summary>
+        /// Parst den Block des Regelwerks
+        /// </summary>
+        /// <returns>Der zu parsende Rulesetblock</returns>
+        private StringBuilder ParseRulesetBlock()
+        {
+            // Nun folgt die OpenBracket
+            Ensure.AreEqual(this.inputString[this.currentPosition], '{');
+
+            this.currentPosition++;
+
+            // Nun folgen die einzelnen Eigenschaften. 
+            // Diese sind relativ simpel zu parsen: 
+            // S* property S* ':' S* value;
+            var rules = new StringBuilder();
+
+            while (this.currentPosition < this.inputString.Length)
+            {
+                rules.Append(this.GetWhitespaces());
+                if (this.currentPosition >= this.inputString.Length)
+                {
+                    // Ende
+                    break;
+                }
+
+                if (this.inputString[this.currentPosition] == '}')
+                {
+                    // Schließende Klammer.
+                    rules.Append('}');
+                    this.currentPosition++;
+                    break;
+                }
+                else if (this.inputString[this.currentPosition] == ';')
+                {
+                    rules.Append(';');
+                    this.currentPosition++;
+                }
+                else
+                {
+                    // Suche nun den Doppelpunkt
+                    var colon = this.inputString.IndexOf(':', this.currentPosition);
+                    Debug.Assert(colon != -1, "No Colon in property found");
+                    if (colon == -1)
+                    {
+                        // Abbruch, um Endlosschleife zu verhindern
+                        this.currentPosition = this.inputString.Length;
+                        break;
+                    }
+
+                    // Suche nun Das Semikolon oder die schließende Klammer
+                    int semikolon = this.inputString.IndexOf(';', colon);
+                    int closingBracket = this.inputString.IndexOf('}', colon);
+
+                    int endValue;
+                    if (semikolon == -1)
+                    {
+                        endValue = closingBracket;
+                    }
+                    else
+                    {
+                        endValue = Math.Min(closingBracket, semikolon);
+                    }
+                    
+                    Ensure.IsTrue(endValue != -1, "No end in Converter");
+                    if (endValue == -1 || colon == -1)
+                    {
+                        // Abbruch, um Endlosschleife zu verhindern
+                        this.currentPosition = this.inputString.Length;
+                        break;
+                    }
+
+                    // Nun werden die Daten geholt. 
+                    string property =
+                        this.inputString.Substring(
+                            this.currentPosition,
+                            colon - this.currentPosition);
+                    string value =
+                        this.inputString.Substring(
+                            colon + 1,
+                            endValue - colon - 1);
+
+                    if (this.rulesetPropertyValueParsed != null)
+                    {
+                        this.rulesetPropertyValueParsed(property, value);
+                    }
+
+                    this.WriteDebug(property + ": " + value);
+
+                    // Füge nun die Variablen ein. 
+                    if (value.IndexOf('[') != -1)
+                    {
+                        foreach (var pair in this.variables)
+                        {
+                            value =
+                                value.Replace(
+                                    String.Format(CultureInfo.InvariantCulture, "[{0}]", pair.Key),
+                                    pair.Value);
+                        }
+                    }
+
+                    // Und baue den Spaß wieder zusammen
+                    rules.AppendFormat("{0}:{1}", property, value);
+
+                    this.currentPosition = endValue;
+                }
+            }
+
+            return rules;
+        }
+
+        /// <summary>
+        /// Parst einen Block und setzt die Variablen
+        /// </summary>
+        private void ParseDCSSDefineBlock()
+        {
+            this.rulesetPropertyValueParsed =
+                delegate(string property, string value)
+                {
+                    this.WriteDebug("Set Variable: " + property);
+                    this.variables[property.Trim()] = value.Trim();
+                };
+
+            this.ParseRulesetBlock();
+        }
+
+        /// <summary>
+        /// Gibt den Selektor zurück
+        /// </summary>
+        /// <returns>Text of selector</returns>
+        private string GetSelector()
+        {
+            int openBracket =
+                this.inputString.IndexOf('{', this.currentPosition);
+
+            if (openBracket == -1)
+            {
+                Debug.Fail("No open bracket after Selector");
+                return string.Empty;
+            }
+
+            var selector =
+                this.inputString.Substring(
+                this.currentPosition,
+                     openBracket - this.currentPosition);
+            this.currentPosition = openBracket;
+            return selector;
+        }
+
+        /// <summary>
+        /// Gibt 'ANY' zurück
+        /// </summary>
+        /// <returns>Text of any</returns>
+        private string GetAny()
+        {
+            return this.GetByPredicate(
+                x => IsAny(x));
+        }
+
+        /// <summary>
+        /// Gibt einen Identifikationstring zurück
+        /// </summary>
+        /// <returns>Returns the identifier</returns>
+        private string GetIdent()
+        {
+            return
+                this.GetByPredicate(
+                    x => Char.IsLetterOrDigit(x) || (int)x > 177);
+        }
+
+        /// <summary>
+        /// Gets the whitespaces
+        /// </summary>
+        /// <returns>String with whitespaces</returns>
+        private string GetWhitespaces()
+        {
+            return
+               this.GetByPredicate(
+                   x =>
+                       x == ' '
+                       || x == '\r'
+                       || x == '\t'
+                       || x == '\n'
+                       || x == '\f');
+        }
+
+        /// <summary>
+        /// Gets the next values, until predicate for character is false
+        /// </summary>
+        /// <param name="predicate">Used predicate</param>
+        /// <returns>String till predicate</returns>
+        private string GetByPredicate(Predicate<char> predicate)
+        {
+            var identification = new StringBuilder();
+            while (this.currentPosition < this.inputString.Length)
+            {
+                var character = this.inputString[this.currentPosition];
+                if (predicate(character))
+                {
+                    identification.Append(character);
+                }
+                else
+                {
+                    break;
+                }
+
+                this.currentPosition++;
+            }
+
+            return identification.ToString();
         }
 
         /// <summary>
         /// Gibt bei Bedarf einen Debugstring auf die Konsole heraus
         /// </summary>
-        /// <param name="p"></param>
-        private void WriteDebug(string strMessage)
+        /// <param name="message">Message for debug</param>
+        private void WriteDebug(string message)
         {
-            if (_Debug)
+            if (this.debug)
             {
-                Console.WriteLine(strMessage);
+                Console.WriteLine(message);
             }
         }
-
     }
 }
