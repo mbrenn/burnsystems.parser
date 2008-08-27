@@ -283,7 +283,7 @@ namespace BurnSystems.Parser.Dcss
         /// Dieses Objekt wird geworfen, wenn ein neues Ruleset-Objekt
         /// geparst wurde. 
         /// </summary>
-        RulesetPropertyValueHandler RulesetPropertyValueParsed ;
+        RulesetPropertyValueHandler RulesetPropertyValueParsed;
 
         /// <summary>
         /// Parst ein Regelwerk
