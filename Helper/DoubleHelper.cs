@@ -21,15 +21,15 @@ namespace BurnSystems.Parser.Helper
     /// </summary>
     public class DoubleHelper : IParserObject
     {
-        double _Number;
+        double item;
 
         /// <summary>
         /// Erzeugt eine neue Instanz
         /// </summary>
-        /// <param name="nNumber"></param>
-        public DoubleHelper(double dNumber)
+        /// <param name="number">Number to be parsed</param>
+        public DoubleHelper(double number)
         {
-            _Number = dNumber;
+            item = number;
         }
 
         #region IParserObject Member
@@ -39,13 +39,13 @@ namespace BurnSystems.Parser.Helper
             switch (strName)
             {
                 case "NumberFormat":
-                    return _Number.ToString("n0", CultureInfo.CurrentUICulture);
+                    return item.ToString("n0", CultureInfo.CurrentUICulture);
                 case "Ceiling":
-                    return Math.Ceiling(_Number);
+                    return Math.Ceiling(item);
                 case "Floor":
-                    return Math.Floor(_Number);
+                    return Math.Floor(item);
                 case "InvariantCulture":
-                    return _Number.ToString(CultureInfo.InvariantCulture);
+                    return item.ToString(CultureInfo.InvariantCulture);
                 default:
                     return null;
             }
@@ -58,12 +58,12 @@ namespace BurnSystems.Parser.Helper
                 case "Round":
                     if (aParameter.Count == 0)
                     {
-                        return Math.Round(_Number);
+                        return Math.Round(item);
                     }
                     if (aParameter.Count == 1)
                     {
                         double dNumber = 
-                            Math.Round(_Number, Convert.ToInt32(aParameter[0], CultureInfo.InvariantCulture));
+                            Math.Round(item, Convert.ToInt32(aParameter[0], CultureInfo.InvariantCulture));
                         return dNumber;
                     }
                     break;

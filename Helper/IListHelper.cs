@@ -9,43 +9,57 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Collections;
+
     /// <summary>
-    /// Listenhilfsklasse
+    /// Defines a helper class for lists
     /// </summary>
     public class IListHelper : IParserObject
     {
-        IList _List;
+        /// <summary>
+        /// Item to be parsed
+        /// </summary>
+        private IList item;
 
         /// <summary>
-        /// Erstellt die Listenklasse
+        /// Creates a new helper instance
         /// </summary>
-        /// <param name="iList"></param>
-        public IListHelper(IList iList)
+        /// <param name="item">Item to be parsed</param>
+        public IListHelper(IList item)
         {
-            _List = iList;
+            this.item = item;
         }
 
         #region IParserObject Members
 
-        public object GetProperty(string strName)
+        /// <summary>
+        /// Gets a property of the list
+        /// </summary>
+        /// <param name="name">Name of property</param>
+        /// <returns>Content of property</returns>
+        public object GetProperty(string name)
         {
-            switch (strName)
+            switch (name)
             {
                 case "Count":
-                    return _List.Count;
+                    return this.item.Count;
                 default:
                     return null;
             }
         }
 
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
+        /// <summary>
+        /// Executes a function on object
+        /// </summary>
+        /// <param name="functionname">Name of function</param>
+        /// <param name="parameter">Parameters of function</param>
+        /// <returns>Result of function</returns>
+        public object ExecuteFunction(string functionname, IList<object> parameter)
         {
             return null;
         }

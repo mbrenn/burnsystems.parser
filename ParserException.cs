@@ -16,7 +16,7 @@ namespace BurnSystems.Parser
     /// <summary>
     /// This exception is thrown, when an exception is thrown.
     /// </summary>
-    [global::System.Serializable]
+    [Serializable]
     public class ParserException : Exception
     {
         /// <summary>
