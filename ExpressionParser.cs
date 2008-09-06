@@ -93,6 +93,7 @@ namespace BurnSystems.Parser
             operatorTable["<="] = Operator.LessOrEqual;
             operatorTable["!="] = Operator.Inequal;
             operatorTable["<>"] = Operator.Inequal;
+            operatorTable["$"] = Operator.Indirect;
         }
 
         /// <summary>
@@ -207,7 +208,13 @@ namespace BurnSystems.Parser
             /// <summary>
             /// Inequal operator
             /// </summary>
-            Inequal
+            Inequal,
+
+            /// <summary>
+            /// Indirect operator, which means that the contents on 
+            /// stack are reevaluated
+            /// </summary>
+            Indirect
         }
 
         /// <summary>
@@ -495,10 +502,7 @@ namespace BurnSystems.Parser
 
                 // Initialize
                 int length = expression.Length;
-                ParseMode parseMode =
-                    Char.IsLetterOrDigit(expression[0]) || expression[0] == '"'
-                        || expression[0] == '(' ?
-                        ParseMode.Expression : ParseMode.Operator;
+                var parseMode = GetParseModeByCharacter(expression[0]);
                 bool onlyDigits = true;
                 bool loop = true;
                 int expressionLength = -1;
@@ -626,7 +630,7 @@ namespace BurnSystems.Parser
                                     break;
                                 case ParseMode.BracketOpen:
                                     this.WriteDebug("(");
-                                    parseMode = ParseMode.Expression;
+                                    parseMode = GetParseModeByCharacter(currentChar);
                                     break;
                             }
                         }
@@ -854,44 +858,46 @@ namespace BurnSystems.Parser
         {
             switch (operatorType)
             {
+                case Operator.Indirect:
+                    return 0;
                 case Operator.Equal:
-                    return 0;
+                    return 1;
                 case Operator.Less:
-                    return 0;
+                    return 1;
                 case Operator.LessOrEqual:
-                    return 0;
+                    return 1;
                 case Operator.Greater:
-                    return 0;
+                    return 1;
                 case Operator.GreaterOrEqual:
-                    return 0;
+                    return 1;
                 case Operator.Inequal:
-                    return 0;
+                    return 1;
                 case Operator.LogicalAnd:
-                    return 1;
+                    return 2;
                 case Operator.LogicalOr:
-                    return 1;
+                    return 2;
                 case Operator.LogicalXor:
-                    return 1;
+                    return 2;
                 case Operator.And:
-                    return 2;
-                case Operator.Or:
-                    return 2;
-                case Operator.Xor:
-                    return 2;
-                case Operator.LogicalNot:
                     return 3;
-                case Operator.Concatenation:
+                case Operator.Or:
+                    return 3;
+                case Operator.Xor:
+                    return 3;
+                case Operator.LogicalNot:
                     return 4;
+                case Operator.Concatenation:
+                    return 5;
                 case Operator.Addition:
-                    return 5;
+                    return 6;
                 case Operator.Subtraction:
-                    return 5;
+                    return 6;
                 case Operator.Multiplication:
-                    return 6;
-                case Operator.Division:
-                    return 6;
-                case Operator.Dereference:
                     return 7;
+                case Operator.Division:
+                    return 7;
+                case Operator.Dereference:
+                    return 8;
             }
 
             return 0;
@@ -910,6 +916,22 @@ namespace BurnSystems.Parser
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Gets the parse mode of the next characters by the first 
+        /// character of an unknown string
+        /// </summary>
+        /// <param name="firstChar">First Character</param>
+        /// <returns>Matching parse mode</returns>
+        private static ParseMode GetParseModeByCharacter(char firstChar)
+        {
+            var parseMode =
+                Char.IsLetterOrDigit(firstChar)
+                    || firstChar == '"'
+                    || firstChar == '(' ?
+                    ParseMode.Expression : ParseMode.Operator;
+            return parseMode;
         }
 
         /// <summary>
@@ -1010,7 +1032,25 @@ namespace BurnSystems.Parser
                 case Operator.Inequal:
                     this.ExecuteInequal();
                     break;
+                case Operator.Indirect:
+                    this.ExecuteIndirect();
+                    break;
             }
+        }
+
+        /// <summary>
+        /// Executes the indirect function
+        /// </summary>
+        private void ExecuteIndirect()
+        {
+            var expression = this.PopString();
+            this.WriteDebug("Indirect: " + expression);
+
+            var parser = new ExpressionParser(this.core);
+            var result = parser.Parse(expression);
+
+            var structure = new ExpressionStructure(result, LiteralType.String);
+            this.expressionStack.Push(structure);
         }
 
         /// <summary>
