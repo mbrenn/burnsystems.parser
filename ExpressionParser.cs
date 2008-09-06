@@ -569,7 +569,7 @@ namespace BurnSystems.Parser
 
                                     break;
                                 case ParseMode.Operator:
-                                    if (Char.IsLetterOrDigit(currentChar) || currentChar == '"')
+                                    if (Char.IsLetterOrDigit(currentChar) || currentChar == '"' || currentChar == '_')
                                     {
                                         // Operator
                                         endExpression = true;
@@ -929,7 +929,8 @@ namespace BurnSystems.Parser
             var parseMode =
                 Char.IsLetterOrDigit(firstChar)
                     || firstChar == '"'
-                    || firstChar == '(' ?
+                    || firstChar == '(' 
+                    || firstChar == '_' ?
                     ParseMode.Expression : ParseMode.Operator;
             return parseMode;
         }
