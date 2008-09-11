@@ -9,64 +9,82 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Web;
-using System.Globalization;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.Web;
+
     /// <summary>
     /// Diese Hilfsklasse kümmert sich um die allgemeine Verarbeitung von Strings
     /// </summary>
     public class StringHelper : IParserObject
     {
-        String _Content;
+        /// <summary>
+        /// Content to be encapsulated
+        /// </summary>
+        private string content;
 
-        public StringHelper(String strContent)
+        /// <summary>
+        /// Creates a new instance
+        /// </summary>
+        /// <param name="content">Content to be set</param>
+        public StringHelper(string content)
         {
-            _Content = strContent;
+            this.content = content;
         }
 
         #region IParserObject Member
 
-        public object GetProperty(string strName)
+        /// <summary>
+        /// Gets a property
+        /// </summary>
+        /// <param name="name">Name of property</param>
+        /// <returns>Value of property</returns>
+        public object GetProperty(string name)
         {
-            switch (strName)
+            switch (name)
             {
                 case "Length":
-                    return _Content.Length;
+                    return this.content.Length;
                 case "HtmlEncoded":
-                    return HttpUtility.HtmlEncode(_Content);
+                    return HttpUtility.HtmlEncode(this.content);
                 case "UrlEncoded":
-                    return HttpUtility.UrlEncode(_Content);
+                    return HttpUtility.UrlEncode(this.content);
                 case "Nl2Br":
-                    return StringManipulation.Nl2Br(_Content);
+                    return StringManipulation.Nl2Br(this.content);
                 default:
                     return null;
             }
         }
 
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
+        /// <summary>
+        /// Executes a function
+        /// </summary>
+        /// <param name="functionName">Name of function</param>
+        /// <param name="parameters">Parameter of function</param>
+        /// <returns>Result of function</returns>
+        public object ExecuteFunction(string functionName, IList<object> parameters)
         {
-            switch (strFunctionname)
+            switch (functionName)
             {
                 case "ToUpper":
-                    return _Content.ToUpper(CultureInfo.CurrentUICulture);
+                    return this.content.ToUpper(CultureInfo.CurrentUICulture);
                 case "ToLower":
-                    return _Content.ToLower(CultureInfo.CurrentUICulture);
+                    return this.content.ToLower(CultureInfo.CurrentUICulture);
                 case "Trim":
-                    return _Content.Trim();
+                    return this.content.Trim();
                 case "TrimEnd":
-                    return _Content.TrimEnd();
+                    return this.content.TrimEnd();
                 case "TrimStart":
-                    return _Content.TrimStart();
+                    return this.content.TrimStart();
                 case "Substring":
-                    return _Content.Substring((int)aParameter[0], (int)aParameter[1]);
+                    return this.content.Substring((int)parameters[0], (int)parameters[1]);
                 case "Contains":
-                    return _Content.Contains(aParameter[0].ToString());
+                    return this.content.Contains(parameters[0].ToString());
             }
+
             return null;            
         }
 

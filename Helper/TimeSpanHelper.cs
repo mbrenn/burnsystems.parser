@@ -9,57 +9,76 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     /// Diese Hilfsfunktion kapselt den TimeSpan ab und stellt verschiedene Properties
     /// und Funktionen nach außen zur Verfügung
     /// </summary>
     public class TimeSpanHelper : IParserObject
     {
-        TimeSpan _TimeSpan;
+        /// <summary>
+        /// Value to be encapsulated
+        /// </summary>
+        private TimeSpan timeSpan;
 
-        public TimeSpanHelper(TimeSpan oTimeSpan)
+        /// <summary>
+        /// Creates a new instance
+        /// </summary>
+        /// <param name="timeSpan">Timespan helper to be used</param>
+        public TimeSpanHelper(TimeSpan timeSpan)
         {
-            _TimeSpan = oTimeSpan;
+            this.timeSpan = timeSpan;
         }
+
         #region IParserObject Member
 
-        public object GetProperty(string strName)
+        /// <summary>
+        /// Gets a property by name
+        /// </summary>
+        /// <param name="name">Name of property</param>
+        /// <returns>Value of property</returns>
+        public object GetProperty(string name)
         {
-            switch (strName)
+            switch (name)
             {
                 case "Seconds":
-                    return _TimeSpan.Seconds;
+                    return this.timeSpan.Seconds;
                 case "Minutes":
-                    return _TimeSpan.Minutes;
+                    return this.timeSpan.Minutes;
                 case "Hours":
-                    return _TimeSpan.Hours;
+                    return this.timeSpan.Hours;
                 case "Days":
-                    return _TimeSpan.Days;
+                    return this.timeSpan.Days;
                 case "Milliseconds":
-                    return _TimeSpan.TotalMilliseconds;
+                    return this.timeSpan.TotalMilliseconds;
                 case "TotalSeconds":
-                    return _TimeSpan.TotalSeconds;
+                    return this.timeSpan.TotalSeconds;
                 case "TotalMinutes":
-                    return _TimeSpan.TotalMinutes;
+                    return this.timeSpan.TotalMinutes;
                 case "TotalHours":
-                    return _TimeSpan.TotalHours;
+                    return this.timeSpan.TotalHours;
                 case "TotalMilliseconds":
-                    return _TimeSpan.TotalMilliseconds;
+                    return this.timeSpan.TotalMilliseconds;
                 case "RoundForSeconds":
-                    return TimeSpan.FromSeconds(Math.Round(_TimeSpan.TotalSeconds));
+                    return TimeSpan.FromSeconds(Math.Round(this.timeSpan.TotalSeconds));
                 case "Format":
-                    return MathHelper.FormatTimeSpan(_TimeSpan);
+                    return MathHelper.FormatTimeSpan(this.timeSpan);
             }
+
             return null;
         }
 
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
+        /// <summary>
+        /// Executes a function
+        /// </summary>
+        /// <param name="functionName">Name of function</param>
+        /// <param name="parameters">Parameters of function</param>
+        /// <returns>Result of function</returns>
+        public object ExecuteFunction(string functionName, IList<object> parameters)
         {
             return null;
         }

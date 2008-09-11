@@ -9,19 +9,21 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Globalization;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+
     /// <summary>
     /// Hilfsklasse für Fließkommazahlen Zahlen
     /// </summary>
     public class DoubleHelper : IParserObject
     {
-        double item;
+        /// <summary>
+        /// Value to be encapsulated
+        /// </summary>
+        private double item;
 
         /// <summary>
         /// Erzeugt eine neue Instanz
@@ -29,47 +31,62 @@ namespace BurnSystems.Parser.Helper
         /// <param name="number">Number to be parsed</param>
         public DoubleHelper(double number)
         {
-            item = number;
+            this.item = number;
         }
 
         #region IParserObject Member
 
-        public object GetProperty(string strName)
+        /// <summary>
+        /// Gets a property
+        /// </summary>
+        /// <param name="name">Name of property</param>
+        /// <returns>Value of property</returns>
+        public object GetProperty(string name)
         {
-            switch (strName)
+            switch (name)
             {
                 case "NumberFormat":
-                    return item.ToString("n0", CultureInfo.CurrentUICulture);
+                    return this.item.ToString("n0", CultureInfo.CurrentUICulture);
                 case "Ceiling":
-                    return Math.Ceiling(item);
+                    return Math.Ceiling(this.item);
                 case "Floor":
-                    return Math.Floor(item);
+                    return Math.Floor(this.item);
                 case "InvariantCulture":
-                    return item.ToString(CultureInfo.InvariantCulture);
+                    return this.item.ToString(CultureInfo.InvariantCulture);
                 default:
                     return null;
             }
         }
 
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
+        /// <summary>
+        /// Executes a function
+        /// </summary>
+        /// <param name="functionName">Name of function</param>
+        /// <param name="parameters">Parameters of function</param>
+        /// <returns>Result of function</returns>
+        public object ExecuteFunction(string functionName, IList<object> parameters)
         {
-            switch (strFunctionname)
+            switch (functionName)
             {                    
                 case "Round":
-                    if (aParameter.Count == 0)
+                    if (parameters.Count == 0)
                     {
-                        return Math.Round(item);
+                        return Math.Round(this.item);
                     }
-                    if (aParameter.Count == 1)
+
+                    if (parameters.Count == 1)
                     {
-                        double dNumber = 
-                            Math.Round(item, Convert.ToInt32(aParameter[0], CultureInfo.InvariantCulture));
-                        return dNumber;
+                        double result = Math.Round(
+                            this.item, 
+                            Convert.ToInt32(parameters[0], CultureInfo.InvariantCulture));
+                        return result;
                     }
+
                     break;
                 default:
                     break;
             }
+
             return null;
         }
 

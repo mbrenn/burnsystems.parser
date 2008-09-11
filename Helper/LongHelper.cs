@@ -9,49 +9,58 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Globalization;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Globalization;
+
     /// <summary>
     /// Hilfsklasse für lange Zahlen
     /// </summary>
     public class LongHelper : IParserObject
     {
-        long _Number;
+        /// <summary>
+        /// Encapsulated number
+        /// </summary>
+        private long number;
 
         /// <summary>
-        /// Erzeugt eine neue Instanz
+        /// Creates a new instance
         /// </summary>
-        /// <param name="nNumber"></param>
-        public LongHelper(long nNumber)
+        /// <param name="number">Number to be used</param>
+        public LongHelper(long number)
         {
-            _Number = nNumber;
+            this.number = number;
         }
 
         #region IParserObject Member
 
-        public object GetProperty(string strName)
+        /// <summary>
+        /// Gets a property
+        /// </summary>
+        /// <param name="name">Name of property</param>
+        /// <returns>Value of property</returns>
+        public object GetProperty(string name)
         {
-            switch (strName)
+            switch (name)
             {
                 case "NumberFormat":
-                    return _Number.ToString("n0", CultureInfo.CurrentUICulture);
+                    return this.number.ToString("n0", CultureInfo.CurrentUICulture);
                 default:
                     return null;
             }
         }
 
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
-        {
-            switch (strFunctionname)
-            {
-                default:
-                    break;
-            }
+        /// <summary>
+        /// Executes a function
+        /// </summary>
+        /// <param name="functionName">Name of Function</param>
+        /// <param name="parameters">Parameter of function</param>
+        /// <returns>Result of function</returns>
+        public object ExecuteFunction(string functionName, IList<object> parameters)
+        {            
             return null;
         }
 

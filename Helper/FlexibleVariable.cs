@@ -9,96 +9,93 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+
     /// <summary>
-    /// Diese Klasse implementiert eine flexible Variable, die genutzt werden kann
-    /// wenn man für spezielle Anwendungen keine eigene Klassenhierarchie aufbauen
-    /// müchte. 
+    /// This class offers a flexible variable, which is a parser object
+    /// and can contain properties and subitems. 
+    /// This class can be used, if no special classes should be created
+    /// for a specific task.
     /// </summary>
     public class FlexibleVariable : IParserObject, IEnumerable, IEnumerable<object>
     {
         /// <summary>
-        /// Unterobjekte, die aufgezühlt werden künnen
+        /// Subitems of the variable
         /// </summary>
-        List<object> _SubItems;
+        private List<object> subItems =
+            new List<object>();
 
         /// <summary>
-        /// Die Eigenschaften
+        /// Properties of variable
         /// </summary>
-        Dictionary<String, object> _Properties;
-
+        private Dictionary<string, object> properties =
+            new Dictionary<string, object>();
+                
         /// <summary>
-        /// Erzeugt eine neue Instanz
+        /// Gets or sets a property
         /// </summary>
-        public FlexibleVariable()
-        {
-            _SubItems = new List<object>();
-            _Properties = new Dictionary<string, object>();
-        }
-
-        /// <summary>
-        /// Setzt die Eigenschaften oder ruft diese ab
-        /// </summary>
-        /// <param name="strKey">Schlüssel</param>
-        /// <returns>Eigenschaft</returns>
-        public object this[String strKey]
+        /// <param name="key">Key of property</param>
+        /// <returns>Value of property</returns>
+        public object this[string key]
         {
             get
             {
-                object oReturn;
-                if (_Properties.TryGetValue(strKey, out oReturn))
+                object result = null;
+                if (this.properties.TryGetValue(key, out result))
                 {
-                    return oReturn;
+                    return result;
                 }
-                FlexibleVariable oVariable = new FlexibleVariable();
-                _Properties[strKey] = oVariable;
-                return oVariable;
+
+                // Creates a new flexible variable for unknown properties
+                FlexibleVariable variable = new FlexibleVariable();
+                this.properties[key] = variable;
+                return variable;
             }
+
             set
             {
-                _Properties[strKey] = value;
+                this.properties[key] = value;
             }
         }
 
         /// <summary>
         /// Fügt ein neues Objekt hinzu
         /// </summary>
-        /// <param name="oItem">Hinzuzufügendes Objekt</param>
-        public void AddItem(object oItem)
+        /// <param name="item">Hinzuzufügendes Objekt</param>
+        public void AddItem(object item)
         {
-            _SubItems.Add(oItem);
+            this.subItems.Add(item);
         }
 
         #region IParserObject Member
 
         /// <summary>
-        /// Gibt eine benannte Eigenschaft zurück
+        /// Gets a property
         /// </summary>
-        /// <param name="strName">Name der Eigenschaft</param>
-        /// <returns>Inhalt der Eigenschaft</returns>
-        public object GetProperty(string strName)
+        /// <param name="name">Name of property</param>
+        /// <returns>Value of property</returns>
+        public object GetProperty(string name)
         {
-            object oReturn;
-            if (_Properties.TryGetValue(strName, out oReturn))
+            object result;
+            if (this.properties.TryGetValue(name, out result))
             {
-                return oReturn;
+                return result;
             }
+
             return null;
         }
 
         /// <summary>
         /// Führt eine benutzerdefinierte Funktion aus
         /// </summary>
-        /// <param name="strFunctionname">Name der Funktion</param>
-        /// <param name="aParameter">Parameter</param>
+        /// <param name="functionName">Name der function</param>
+        /// <param name="parameters">Parameter of function</param>
         /// <returns>null, da dieses Objekt keine Funktion implementiert</returns>
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
+        public object ExecuteFunction(string functionName, IList<object> parameters)
         {
             return null;
         }
@@ -108,21 +105,25 @@ namespace BurnSystems.Parser.Helper
         #region IEnumerable Member
 
         /// <summary>
-        /// Gibt die Aufzühlung für die Subitems zurück
+        /// Gibt die Aufzählung für die Subitems zurück
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The Enumerator of subitems</returns>
         public IEnumerator GetEnumerator()
         {
-            return _SubItems.GetEnumerator();
+            return this.subItems.GetEnumerator();
         }
 
         #endregion
 
+        /// <summary>
+        /// Gets the enumerator 
+        /// </summary>
+        /// <returns>Enumerator for all subitems</returns>
         IEnumerator<object> IEnumerable<object>.GetEnumerator()
         {
-            foreach (object oObject in _SubItems)
+            foreach (object item in this.subItems)
             {
-                yield return oObject;
+                yield return item;
             }
         }
     }

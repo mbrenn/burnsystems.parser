@@ -9,71 +9,85 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace BurnSystems.Parser.Helper
 {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     /// Hilfsklasse für das Objekt DateTime
     /// </summary>
     public class DateTimeHelper : IParserObject
     {
         /// <summary>
-        /// Zeitpunkt
+        /// Datetime-Value to be encapsulated
         /// </summary>
-        DateTime _DateTime;
+        private DateTime dateTime;
 
-        public DateTimeHelper(DateTime oDateTime)
+        /// <summary>
+        /// Creates a new instance
+        /// </summary>
+        /// <param name="dateTime">Datetime value to be used</param>
+        public DateTimeHelper(DateTime dateTime)
         {
-            _DateTime = oDateTime;
+            this.dateTime = dateTime;
         }
 
         #region IParserObject Members
 
-        public object GetProperty(string strName)
+        /// <summary>
+        /// Gets a property by name
+        /// </summary>
+        /// <param name="name">Name of property</param>
+        /// <returns>Value of property</returns>
+        public object GetProperty(string name)
         {
-            switch (strName)
+            switch (name)
             {
                 case "Day":
-                    return _DateTime.Day;
+                    return this.dateTime.Day;
                 case "Date":
-                    return _DateTime.Date;
+                    return this.dateTime.Date;
                 case "DayOfWeek":
-                    return _DateTime.DayOfWeek;
+                    return this.dateTime.DayOfWeek;
                 case "DayOfYear":
-                    return _DateTime.DayOfYear;
+                    return this.dateTime.DayOfYear;
                 case "Hour":
-                    return _DateTime.Hour;
+                    return this.dateTime.Hour;
                 case "Millisecond":
-                    return _DateTime.Millisecond;
+                    return this.dateTime.Millisecond;
                 case "Minute":
-                    return _DateTime.Minute;
+                    return this.dateTime.Minute;
                 case "Month":
-                    return _DateTime.Month;
+                    return this.dateTime.Month;
                 case "Second":
-                    return _DateTime.Second;
+                    return this.dateTime.Second;
                 case "Ticks":
-                    return _DateTime.Ticks;
+                    return this.dateTime.Ticks;
                 case "TimeOfDay":
-                    return _DateTime.TimeOfDay;
+                    return this.dateTime.TimeOfDay;
                 case "Year":
-                    return _DateTime.Year;
+                    return this.dateTime.Year;
                 case "LongTime":
-                    return _DateTime.ToLongTimeString();
+                    return this.dateTime.ToLongTimeString();
                 case "ShortTime":
-                    return _DateTime.ToShortTimeString();
+                    return this.dateTime.ToShortTimeString();
                 case "LongDate":
-                    return _DateTime.ToLongDateString();
+                    return this.dateTime.ToLongDateString();
                 case "ShortDate":
-                    return _DateTime.ToShortDateString();
+                    return this.dateTime.ToShortDateString();
                 default:
                     return null;
             }
         }
 
-        public object ExecuteFunction(string strFunctionname, IList<object> aParameter)
+        /// <summary>
+        /// Executes a function
+        /// </summary>
+        /// <param name="functionName">Name of function</param>
+        /// <param name="parameters">Parameters of function</param>
+        /// <returns>Value of function</returns>
+        public object ExecuteFunction(string functionName, IList<object> parameters)
         {
             return null;
         }
