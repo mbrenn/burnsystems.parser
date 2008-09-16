@@ -20,14 +20,14 @@ namespace BurnSystems.Parser
     public class ParserException : Exception
     {
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the ParserException class.
         /// </summary>
         public ParserException() 
         { 
         }
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the ParserException class.
         /// </summary>
         /// <param name="message">Message to be set</param>
         public ParserException(string message) : base(message) 
@@ -35,7 +35,7 @@ namespace BurnSystems.Parser
         }
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the ParserException class.
         /// </summary>
         /// <param name="message">Message to be set</param>
         /// <param name="inner">Inner exception</param>
@@ -44,7 +44,7 @@ namespace BurnSystems.Parser
         }
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the ParserException class.
         /// </summary>
         /// <param name="info">Serialization info</param>
         /// <param name="context">Serialization context</param>

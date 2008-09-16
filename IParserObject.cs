@@ -11,10 +11,7 @@
 
 namespace BurnSystems.Parser
 {
-    using System;
     using System.Collections.Generic;
-    using System.Text;
-    using System.Collections.ObjectModel;
 
     /// <summary>
     /// This interface has to be implemented by all objects, which offer methods

@@ -26,7 +26,7 @@ namespace BurnSystems.Parser.Helper
         private double item;
 
         /// <summary>
-        /// Erzeugt eine neue Instanz
+        /// Initializes a new instance of the DoubleHelper class.
         /// </summary>
         /// <param name="number">Number to be parsed</param>
         public DoubleHelper(double number)

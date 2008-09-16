@@ -27,7 +27,7 @@ namespace BurnSystems.Parser.Helper
         private string content;
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the StringHelper class.
         /// </summary>
         /// <param name="content">Content to be set</param>
         public StringHelper(string content)

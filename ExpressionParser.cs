@@ -12,12 +12,10 @@
 namespace BurnSystems.Parser
 {
     using System;
-    using System.Collections.Generic;
-    using System.Text;
-    using System.Reflection;
     using System.Collections;
-    using BurnSystems.Parser.Helper;
+    using System.Collections.Generic;
     using System.Globalization;
+    using BurnSystems.Parser.Helper;
 
     /// <summary>
     /// Expression parser, which evaluates simple expressions like '23+name'
@@ -68,7 +66,7 @@ namespace BurnSystems.Parser
         #region Static variables and methods
 
         /// <summary>
-        /// Static constructor
+        /// Initializes static members of the ExpressionParser class.
         /// </summary>
         static ExpressionParser()
         {
@@ -97,7 +95,7 @@ namespace BurnSystems.Parser
         }
 
         /// <summary>
-        /// Creates new expression parser
+        /// Initializes a new instance of the ExpressionParser class.
         /// </summary>
         /// <param name="core">Templateparser to be used</param>
         public ExpressionParser(TemplateParser core)
@@ -266,13 +264,11 @@ namespace BurnSystems.Parser
             /// <summary>
             /// Current text is an operator
             /// </summary>
-            /// 
             Operator,
 
             /// <summary>
             /// Opens bracket
             /// </summary>
-            /// 
             BracketOpen,
 
             /// <summary>
@@ -840,7 +836,7 @@ namespace BurnSystems.Parser
 
                 if (methodInfo == null)
                 {
-                    return "";
+                    return string.Empty;
                 }
                 else
                 {
@@ -1211,7 +1207,7 @@ namespace BurnSystems.Parser
                 // Do reflections
                 var type = objectOnStack.GetType();
                 var property = type.GetProperty(method);
-                object result = "";
+                object result = string.Empty;
 
                 if (property != null)
                 {
@@ -1364,7 +1360,7 @@ namespace BurnSystems.Parser
 
             if (string.IsNullOrEmpty(literal))
             {
-                result = "";
+                result = string.Empty;
             }
             else if (onlyDigits)
             {
@@ -1434,7 +1430,7 @@ namespace BurnSystems.Parser
                 }
                 else
                 {
-                    return "";
+                    return string.Empty;
                 }
             }
 
@@ -1610,7 +1606,7 @@ namespace BurnSystems.Parser
         private class ExpressionStructure
         {
             /// <summary>
-            /// Creates new expressiontype
+            /// Initializes a new instance of the ExpressionStructure class.
             /// </summary>
             /// <param name="literal">Literal for the type</param>
             /// <param name="type">Type for the type</param>
@@ -1645,7 +1641,7 @@ namespace BurnSystems.Parser
         private class OperatorStructure
         {
             /// <summary>
-            /// Creates new operator structure
+            /// Initializes a new instance of the OperatorStructure class.
             /// </summary>
             /// <param name="operatorStructure">Operator for the current structure</param>
             /// <param name="priority">Priority for the operator</param>

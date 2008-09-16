@@ -34,7 +34,7 @@ namespace BurnSystems.Parser
         private ExecuteCommand executeCommandDelegate;
 
         /// <summary>
-        /// Erzeugt eine neue Instanz
+        /// Initializes a new instance of the UserCommandTemplateParser class. 
         /// </summary>
         /// <param name="commandDelegate">Command delegation</param>
         public UserCommandTemplateParser(ExecuteCommand commandDelegate)

@@ -72,14 +72,14 @@ namespace BurnSystems.Parser
         private ExternalCommand externalCommand;
 
         /// <summary>
-        /// Creates new parser core instance
+        /// Initializes a new instance of the TemplateParser class.
         /// </summary>
         public TemplateParser()
         {
         }
 
         /// <summary>
-        /// Creates new instance
+        /// Initializes a new instance of the TemplateParser class.
         /// </summary>
         /// <param name="variables">Variables to be set</param>
         public TemplateParser(Dictionary<string, object> variables)
@@ -338,7 +338,7 @@ namespace BurnSystems.Parser
                     return (nX * nX) + strY.ToUpper(CultureInfo.CurrentUICulture);
             }
 
-            return "";
+            return string.Empty;
         }
 
         /// <summary>

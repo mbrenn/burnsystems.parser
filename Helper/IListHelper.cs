@@ -11,10 +11,8 @@
 
 namespace BurnSystems.Parser.Helper
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
     using System.Collections;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Defines a helper class for lists
@@ -27,7 +25,7 @@ namespace BurnSystems.Parser.Helper
         private IList item;
 
         /// <summary>
-        /// Creates a new helper instance
+        /// Initializes a new instance of the IListHelper class.
         /// </summary>
         /// <param name="item">Item to be parsed</param>
         public IListHelper(IList item)

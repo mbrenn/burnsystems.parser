@@ -25,7 +25,7 @@ namespace BurnSystems.Parser.Helper
         private DateTime dateTime;
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the DateTimeHelper class.
         /// </summary>
         /// <param name="dateTime">Datetime value to be used</param>
         public DateTimeHelper(DateTime dateTime)

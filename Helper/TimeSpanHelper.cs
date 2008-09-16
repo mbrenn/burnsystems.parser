@@ -26,7 +26,7 @@ namespace BurnSystems.Parser.Helper
         private TimeSpan timeSpan;
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the TimeSpanHelper class.
         /// </summary>
         /// <param name="timeSpan">Timespan helper to be used</param>
         public TimeSpanHelper(TimeSpan timeSpan)

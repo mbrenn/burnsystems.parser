@@ -11,9 +11,7 @@
 
 namespace BurnSystems.Parser.Helper
 {
-    using System;
     using System.Collections.Generic;
-    using System.Text;
     using System.Globalization;
 
     /// <summary>
@@ -27,7 +25,7 @@ namespace BurnSystems.Parser.Helper
         private long number;
 
         /// <summary>
-        /// Creates a new instance
+        /// Initializes a new instance of the LongHelper class.
         /// </summary>
         /// <param name="number">Number to be used</param>
         public LongHelper(long number)
