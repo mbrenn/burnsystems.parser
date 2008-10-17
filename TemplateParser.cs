@@ -18,6 +18,7 @@ namespace BurnSystems.Parser
     using System.IO;
     using System.Text;
     using BurnSystems.Test;
+using BurnSystems.Collections;
 
     /// <summary>
     /// Dieser Delegate wird genutzt um externe Kommandos einzubinden
@@ -44,6 +45,12 @@ namespace BurnSystems.Parser
         /// Parser Variables
         /// </summary>
         private Dictionary<string, object> variables = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Stores the variables for latebinding
+        /// </summary>
+        private Dictionary<string, Function<object>> lateBindingVariables = 
+            new Dictionary<string, Function<object>>();
 
         /// <summary>
         /// Stringbuilder, which contains the result
@@ -128,6 +135,16 @@ namespace BurnSystems.Parser
         public void AddVariable(string name, object value)
         {
             this.variables[name] = value;
+        }
+
+        /// <summary>
+        /// Adds a variable for latebinding
+        /// </summary>
+        /// <param name="name">Name of variable</param>
+        /// <param name="factory">Factorymethod, which creates the variable</param>
+        public void AddLateBinding(string name, Function<object> factory)
+        {
+            this.lateBindingVariables[name] = factory;
         }
 
         /// <summary>
@@ -291,6 +308,35 @@ namespace BurnSystems.Parser
             finally
             {
                 this.parsing = false;
+            }
+        }
+
+        /// <summary>
+        /// Gets the value of a variable with the given name. 
+        /// The variable is first searched in the <c>Variables</c>-Member
+        /// and afterwards in the late binding-Array. 
+        /// If the value is not found, <c>string.Empty</c> will be returned.
+        /// </summary>
+        /// <param name="valueName">Name of the requested variable.</param>
+        /// <returns>Content of variable</returns>
+        public object GetValue(string valueName)
+        {
+            object result;
+            if (this.Variables.TryGetValue(valueName, out result))
+            {
+                return result;
+            }
+            else
+            {
+                Function<object> lateBinding;
+                if (this.lateBindingVariables.TryGetValue(valueName, out lateBinding))
+                {
+                    // Late binding of variable
+                    result = lateBinding();
+                    this.Variables[valueName] = result;
+                    return result;
+                }
+                return string.Empty;
             }
         }
 

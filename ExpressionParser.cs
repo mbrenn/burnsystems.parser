@@ -1423,15 +1423,7 @@ namespace BurnSystems.Parser
                 string variableName = (string)objectOnStack;
 
                 // Resolves variable
-                object result;
-                if (this.core.Variables.TryGetValue(variableName, out result))
-                {
-                    return result;
-                }
-                else
-                {
-                    return string.Empty;
-                }
+                return this.core.GetValue(variableName);
             }
 
             return objectOnStack;
