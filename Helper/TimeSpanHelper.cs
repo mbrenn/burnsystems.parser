@@ -79,7 +79,7 @@ namespace BurnSystems.Parser.Helper
         /// <param name="parameters">Parameters of function</param>
         /// <returns>Result of function</returns>
         public object ExecuteFunction(string functionName, IList<object> parameters)
-        {
+        {            
             return null;
         }
 

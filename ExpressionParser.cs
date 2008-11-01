@@ -1389,6 +1389,11 @@ namespace BurnSystems.Parser
                     result = null;
                     literalType = LiteralType.Object;
                 }
+                else if (literal == "Now")
+                {
+                    result = DateTime.Now;
+                    literalType = LiteralType.Object;
+                }
                 else
                 {
                     // Evaluate Variable
