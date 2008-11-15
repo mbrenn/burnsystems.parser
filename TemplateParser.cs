@@ -169,7 +169,7 @@ using BurnSystems.Collections;
             if (string.IsNullOrEmpty(content))
             {
                 // Sonderbehandlung 
-                return String.Empty;
+                return string.Empty;
             }
         
             try
