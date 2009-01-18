@@ -17,8 +17,8 @@ namespace BurnSystems.Parser
     using System.Globalization;
     using System.IO;
     using System.Text;
+    using BurnSystems.Collections;
     using BurnSystems.Test;
-using BurnSystems.Collections;
 
     /// <summary>
     /// Dieser Delegate wird genutzt um externe Kommandos einzubinden
@@ -336,6 +336,7 @@ using BurnSystems.Collections;
                     this.Variables[valueName] = result;
                     return result;
                 }
+
                 return string.Empty;
             }
         }
