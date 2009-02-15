@@ -13,6 +13,7 @@ namespace BurnSystems.Parser.Helper
 {
     using System.Collections;
     using System.Collections.Generic;
+    using BurnSystems.Interfaces;
 
     /// <summary>
     /// Defines a helper class for lists

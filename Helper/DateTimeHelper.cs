@@ -13,6 +13,7 @@ namespace BurnSystems.Parser.Helper
 {
     using System;
     using System.Collections.Generic;
+    using BurnSystems.Interfaces;
 
     /// <summary>
     /// Hilfsklasse für das Objekt DateTime

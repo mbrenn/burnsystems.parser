@@ -16,6 +16,7 @@ namespace BurnSystems.Parser
     using System.Collections.Generic;
     using System.Globalization;
     using BurnSystems.Parser.Helper;
+    using BurnSystems.Interfaces;
 
     /// <summary>
     /// Expression parser, which evaluates simple expressions like '23+name'
@@ -814,7 +815,7 @@ namespace BurnSystems.Parser
                 }
             }
 
-            IParserObject parserInstance = instance as IParserObject;
+            var parserInstance = instance as IParserObject;
 
             if (parserInstance != null)
             {

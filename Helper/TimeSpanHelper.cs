@@ -13,6 +13,7 @@ namespace BurnSystems.Parser.Helper
 {
     using System;
     using System.Collections.Generic;
+    using BurnSystems.Interfaces;
 
     /// <summary>
     /// Diese Hilfsfunktion kapselt den TimeSpan ab und stellt verschiedene Properties
@@ -33,8 +34,6 @@ namespace BurnSystems.Parser.Helper
         {
             this.timeSpan = timeSpan;
         }
-
-        #region IParserObject Member
 
         /// <summary>
         /// Gets a property by name
@@ -82,7 +81,5 @@ namespace BurnSystems.Parser.Helper
         {            
             return null;
         }
-
-        #endregion
     }
 }

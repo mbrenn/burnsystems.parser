@@ -14,6 +14,7 @@ namespace BurnSystems.Parser.Helper
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using BurnSystems.Interfaces;
 
     /// <summary>
     /// This class offers a flexible variable, which is a parser object

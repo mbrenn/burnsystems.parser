@@ -70,8 +70,6 @@
     <Compile Include="Helper\DoubleHelper.cs" />
     <Compile Include="Helper\StringHelper.cs" />
     <Compile Include="Helper\TimeSpanHelper.cs" />
-    <Compile Include="IParserDictionary.cs" />
-    <Compile Include="IParserObject.cs" />
     <Compile Include="Localization_Parser.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

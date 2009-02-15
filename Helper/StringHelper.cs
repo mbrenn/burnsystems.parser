@@ -15,6 +15,7 @@ namespace BurnSystems.Parser.Helper
     using System.Collections.Generic;
     using System.Globalization;
     using System.Web;
+    using BurnSystems.Interfaces;
 
     /// <summary>
     /// Diese Hilfsklasse kümmert sich um die allgemeine Verarbeitung von Strings
