@@ -15,8 +15,8 @@ namespace BurnSystems.Parser
     using System.Collections;
     using System.Collections.Generic;
     using System.Globalization;
-    using BurnSystems.Parser.Helper;
     using BurnSystems.Interfaces;
+    using BurnSystems.Parser.Helper;
 
     /// <summary>
     /// Expression parser, which evaluates simple expressions like '23+name'
