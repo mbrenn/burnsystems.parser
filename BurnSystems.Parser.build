@@ -1,0 +1,21 @@
+<Project DefaultTargets="Compile"
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CSFile Include="**/*.cs" />
+    <CSFile Include="*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <References Include="System.Drawing.dll" />
+    <References Include="System.Web.dll" />
+    <References Include="$(BSReferencePath)/BurnSystems.dll" />
+  </ItemGroup>
+  <Target Name="Compile">
+    <Csc Sources="@(CSFile)" 
+    	TargetType="library" 
+    	References="@(References)" 
+    	KeyFile="BurnSystems_AGPL.snk" 
+    	OutputAssembly="BurnSystems.Parser.dll"
+    	WarningLevel="4">
+    </Csc>
+  </Target>
+</Project>
