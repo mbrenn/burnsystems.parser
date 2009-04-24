@@ -1,17 +1,27 @@
 <Project DefaultTargets="Compile"
-    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+    ToolsVersion="3.5">
   <ItemGroup>
-    <CSFile Include="**/*.cs" />
+    <Compile Include="**/*.cs" />
   </ItemGroup>
   <ItemGroup>
-    <References Include="System.Drawing.dll" />
-    <References Include="System.Web.dll" />
-    <References Include="$(BSReferencePath)/BurnSystems.dll" />
+    <Reference Include="System.Drawing.dll" />
+    <Reference Include="System.Web.dll" />
+    <Reference Include="$(BSReferencePath)/BurnSystems.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resx Include="Localization_Parser.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="BurnSystems.Parser.Localization_Parser.resources" />
   </ItemGroup>
   <Target Name="Compile">
-    <Csc Sources="@(CSFile)" 
+    <GenerateResource Sources="@(Resx)"
+                      OutputResources="@(Resource)" />
+    <Csc Sources="@(Compile)" 
+      Resources="@(Resource)"
     	TargetType="library" 
-    	References="@(References)" 
+    	References="@(Reference)" 
     	KeyFile="BurnSystems_AGPL.snk" 
     	OutputAssembly="BurnSystems.Parser.dll"
     	WarningLevel="4">
