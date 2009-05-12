@@ -34,8 +34,6 @@ namespace BurnSystems.Parser.Helper
             this.dateTime = dateTime;
         }
 
-        #region IParserObject Members
-
         /// <summary>
         /// Gets a property by name
         /// </summary>
@@ -92,7 +90,5 @@ namespace BurnSystems.Parser.Helper
         {
             return null;
         }
-
-        #endregion
     }
 }

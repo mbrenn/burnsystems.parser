@@ -34,8 +34,6 @@ namespace BurnSystems.Parser.Helper
             this.item = item;
         }
 
-        #region IParserObject Members
-
         /// <summary>
         /// Gets a property of the list
         /// </summary>
@@ -62,7 +60,5 @@ namespace BurnSystems.Parser.Helper
         {
             return null;
         }
-
-        #endregion
     }
 }

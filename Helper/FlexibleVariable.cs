@@ -72,8 +72,6 @@ namespace BurnSystems.Parser.Helper
             this.subItems.Add(item);
         }
 
-        #region IParserObject Member
-
         /// <summary>
         /// Gets a property
         /// </summary>
@@ -101,10 +99,6 @@ namespace BurnSystems.Parser.Helper
             return null;
         }
 
-        #endregion
-
-        #region IEnumerable Member
-
         /// <summary>
         /// Gibt die Aufzählung für die Subitems zurück
         /// </summary>
@@ -113,8 +107,6 @@ namespace BurnSystems.Parser.Helper
         {
             return this.subItems.GetEnumerator();
         }
-
-        #endregion
 
         /// <summary>
         /// Gets the enumerator 
