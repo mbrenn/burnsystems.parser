@@ -44,6 +44,8 @@ namespace BurnSystems.Parser.Helper
         {
             switch (name)
             {
+                case "Negative":
+                    return this.item * -1;
                 case "NumberFormat":
                     return this.item.ToString("n0", CultureInfo.CurrentUICulture);
                 case "Ceiling":
