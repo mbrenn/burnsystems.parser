@@ -1532,10 +1532,23 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteAddition()
         {
-            int nA = this.PopInteger();
-            int nB = this.PopInteger();
-            var structure = new ExpressionStructure(nA + nB, LiteralType.Integer);
-            this.expressionStack.Push(structure);
+            var a = this.PopObject();
+            var b = this.PopObject();
+
+            if (a is double || b is double)
+            {
+                var da = Convert.ToDouble(a);
+                var db = Convert.ToDouble(b);
+                var structure = new ExpressionStructure(da + db, LiteralType.Integer);
+                this.expressionStack.Push(structure);
+            }
+            else
+            {
+                var na = Convert.ToInt64(a);
+                var nb = Convert.ToInt64(b);
+                var structure = new ExpressionStructure(na + nb, LiteralType.Integer);
+                this.expressionStack.Push(structure);
+            }
         }
 
         /// <summary>
@@ -1543,10 +1556,23 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteSubtraction()
         {
-            int nA = this.PopInteger();
-            int nB = this.PopInteger();
-            var structure = new ExpressionStructure(nB - nA, LiteralType.Integer);
-            this.expressionStack.Push(structure);
+            var a = this.PopObject();
+            var b = this.PopObject();
+
+            if (a is double || b is double)
+            {
+                var da = Convert.ToDouble(a);
+                var db = Convert.ToDouble(b);
+                var structure = new ExpressionStructure(da - db, LiteralType.Integer);
+                this.expressionStack.Push(structure);
+            }
+            else
+            {
+                var na = Convert.ToInt64(a);
+                var nb = Convert.ToInt64(b);
+                var structure = new ExpressionStructure(na - nb, LiteralType.Integer);
+                this.expressionStack.Push(structure);
+            }
         }
 
         /// <summary>
@@ -1554,23 +1580,21 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteMultiplication()
         {
-            object oA = this.PopObject();
-            object oB = this.PopObject();
+            var a = this.PopObject();
+            var b = this.PopObject();
 
-            if (oA is double || oB is double)
+            if (a is double || b is double)
             {
-                double dA = Convert.ToDouble(oA, CultureInfo.CurrentUICulture);
-                double dB = Convert.ToDouble(oB, CultureInfo.CurrentUICulture);
-                var structure =
-                    new ExpressionStructure(dA * dB, LiteralType.Integer);
+                var da = Convert.ToDouble(a);
+                var db = Convert.ToDouble(b);
+                var structure = new ExpressionStructure(da * db, LiteralType.Integer);
                 this.expressionStack.Push(structure);
             }
             else
             {
-                int nA = Convert.ToInt32(oA, CultureInfo.CurrentUICulture);
-                int nB = Convert.ToInt32(oB, CultureInfo.CurrentUICulture);
-                var structure =
-                    new ExpressionStructure(nA * nB, LiteralType.Integer);
+                var na = Convert.ToInt64(a);
+                var nb = Convert.ToInt64(b);
+                var structure = new ExpressionStructure(na * nb, LiteralType.Integer);
                 this.expressionStack.Push(structure);
             }
         }
@@ -1580,10 +1604,23 @@ namespace BurnSystems.Parser
         /// </summary>
         private void ExecuteDivision()
         {
-            int nA = this.PopInteger();
-            int nB = this.PopInteger();
-            var structure = new ExpressionStructure(nB / nA, LiteralType.Integer);
-            this.expressionStack.Push(structure);
+            var a = this.PopObject();
+            var b = this.PopObject();
+
+            if (a is double || b is double)
+            {
+                var da = Convert.ToDouble(a);
+                var db = Convert.ToDouble(b);
+                var structure = new ExpressionStructure(da / db, LiteralType.Integer);
+                this.expressionStack.Push(structure);
+            }
+            else
+            {
+                var na = Convert.ToInt64(a);
+                var nb = Convert.ToInt64(b);
+                var structure = new ExpressionStructure(na / nb, LiteralType.Integer);
+                this.expressionStack.Push(structure);
+            }
         }
 
         /// <summary>
