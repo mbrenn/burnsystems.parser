@@ -1563,14 +1563,14 @@ namespace BurnSystems.Parser
             {
                 var da = Convert.ToDouble(a);
                 var db = Convert.ToDouble(b);
-                var structure = new ExpressionStructure(da - db, LiteralType.Integer);
+                var structure = new ExpressionStructure(db - da, LiteralType.Integer);
                 this.expressionStack.Push(structure);
             }
             else
             {
                 var na = Convert.ToInt64(a);
                 var nb = Convert.ToInt64(b);
-                var structure = new ExpressionStructure(na - nb, LiteralType.Integer);
+                var structure = new ExpressionStructure(nb - na, LiteralType.Integer);
                 this.expressionStack.Push(structure);
             }
         }
@@ -1611,14 +1611,14 @@ namespace BurnSystems.Parser
             {
                 var da = Convert.ToDouble(a);
                 var db = Convert.ToDouble(b);
-                var structure = new ExpressionStructure(da / db, LiteralType.Integer);
+                var structure = new ExpressionStructure(db / da, LiteralType.Integer);
                 this.expressionStack.Push(structure);
             }
             else
             {
                 var na = Convert.ToInt64(a);
                 var nb = Convert.ToInt64(b);
-                var structure = new ExpressionStructure(na / nb, LiteralType.Integer);
+                var structure = new ExpressionStructure(nb / na, LiteralType.Integer);
                 this.expressionStack.Push(structure);
             }
         }
