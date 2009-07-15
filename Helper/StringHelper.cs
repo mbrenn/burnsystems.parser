@@ -79,7 +79,9 @@ namespace BurnSystems.Parser.Helper
                 case "TrimStart":
                     return this.content.TrimStart();
                 case "Substring":
-                    return this.content.Substring((int)parameters[0], (int)parameters[1]);
+                    return this.content.Substring(
+                        Convert.ToInt32(parameters[0]),
+                        Convert.ToInt32(parameters[1]));
                 case "Contains":
                     return this.content.Contains(parameters[0].ToString());
             }
