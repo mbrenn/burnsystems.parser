@@ -82,6 +82,10 @@ namespace BurnSystems.Parser.Helper
                     return this.content.Substring(
                         Convert.ToInt32(parameters[0]),
                         Convert.ToInt32(parameters[1]));
+                case "Shorten":
+                    return StringManipulation.ShortenString(
+                        this.content,
+                        Convert.ToInt32(parameters[0]));
                 case "Contains":
                     return this.content.Contains(parameters[0].ToString());
             }
