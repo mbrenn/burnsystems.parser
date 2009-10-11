@@ -45,6 +45,16 @@ namespace BurnSystems.Parser.Helper
             {
                 case "NumberFormat":
                     return this.number.ToString("n0", CultureInfo.CurrentUICulture);
+                case "ExplicitSign":
+                    if (this.number > 0)
+                    {
+                        return "+" + this.number.ToString("n0", CultureInfo.CurrentUICulture);
+                    }
+                    else
+                    {
+                        return this.number.ToString("n0", CultureInfo.CurrentUICulture);
+                    }
+
                 default:
                     return null;
             }
