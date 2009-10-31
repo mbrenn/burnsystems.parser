@@ -105,7 +105,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BurnSystems\BurnSystems.csproj">
+    <ProjectReference Include="..\..\BurnSystems\src\BurnSystems.csproj">
       <Project>{42023D16-AFD1-4D99-BC39-9EF46982EB54}</Project>
       <Name>BurnSystems</Name>
     </ProjectReference>
