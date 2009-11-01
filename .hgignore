@@ -1,0 +1,6 @@
+glob:bin
+glob:obj
+glob:src\bin
+glob:src\obj
+relre:(.*)\.suo
+relre:(.*)\.csproj\.user
