@@ -4,3 +4,4 @@ glob:src\bin
 glob:src\obj
 relre:(.*)\.suo
 relre:(.*)\.csproj\.user
+glob:StyleCop.Cache
