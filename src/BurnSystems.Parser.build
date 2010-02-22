@@ -12,7 +12,7 @@
 	
     <Reference Include="System.Drawing.dll" />
     <Reference Include="System.Web.dll" />
-    <Reference Include="$(ReferencePath)/BurnSystems.dll" />
+    <Reference Include="$(ReferencePath)BurnSystems.dll" />
     
     <Resx Include="Localization_Parser.resx" />
     
