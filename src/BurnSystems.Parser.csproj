@@ -142,7 +142,7 @@
     <None Include="BurnSystems_AGPL.snk" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\BurnSystems.dll\src\BurnSystems.csproj">
+    <ProjectReference Include="..\dependencies\BurnSystems\src\BurnSystems.csproj">
       <Project>{42023D16-AFD1-4D99-BC39-9EF46982EB54}</Project>
       <Name>BurnSystems</Name>
     </ProjectReference>
