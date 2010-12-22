@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BurnSystems", "..\BurnSyste
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BurnSystems.Parser", "src\BurnSystems.Parser.csproj", "{24FC6CC7-AFEF-456D-8056-96712D1B7909}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BurnSystems.Parser.UnitTests", "tests\BurnSystems.Parser.UnitTests\BurnSystems.Parser.UnitTests.csproj", "{67629D56-5EDC-4C35-9180-06DF7A887DEA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,12 @@ Global
 		{24FC6CC7-AFEF-456D-8056-96712D1B7909}.Release|Any CPU.Build.0 = Release|Any CPU
 		{24FC6CC7-AFEF-456D-8056-96712D1B7909}.Release|x86.ActiveCfg = Release|x86
 		{24FC6CC7-AFEF-456D-8056-96712D1B7909}.Release|x86.Build.0 = Release|x86
+		{67629D56-5EDC-4C35-9180-06DF7A887DEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67629D56-5EDC-4C35-9180-06DF7A887DEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67629D56-5EDC-4C35-9180-06DF7A887DEA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{67629D56-5EDC-4C35-9180-06DF7A887DEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67629D56-5EDC-4C35-9180-06DF7A887DEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67629D56-5EDC-4C35-9180-06DF7A887DEA}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
