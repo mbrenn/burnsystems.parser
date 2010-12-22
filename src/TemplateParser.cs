@@ -49,8 +49,8 @@ namespace BurnSystems.Parser
         /// <summary>
         /// Stores the variables for latebinding
         /// </summary>
-        private Dictionary<string, Function<object>> lateBindingVariables = 
-            new Dictionary<string, Function<object>>();
+        private Dictionary<string, Func<object>> lateBindingVariables =
+            new Dictionary<string, Func<object>>();
 
         /// <summary>
         /// Stringbuilder, which contains the result
@@ -142,7 +142,7 @@ namespace BurnSystems.Parser
         /// </summary>
         /// <param name="name">Name of variable</param>
         /// <param name="factory">Factorymethod, which creates the variable</param>
-        public void AddLateBinding(string name, Function<object> factory)
+        public void AddLateBinding(string name, Func<object> factory)
         {
             this.lateBindingVariables[name] = factory;
         }
@@ -328,7 +328,7 @@ namespace BurnSystems.Parser
             }
             else
             {
-                Function<object> lateBinding;
+                Func<object> lateBinding;
                 if (this.lateBindingVariables.TryGetValue(valueName, out lateBinding))
                 {
                     // Late binding of variable
