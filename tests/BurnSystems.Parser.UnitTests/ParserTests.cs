@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NUnit.Framework;
-using System.Xml.Linq;
-
+﻿
 namespace BurnSystems.Parser.UnitTests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Xml.Linq;
+    using NUnit.Framework;
+
     /// <summary>
     /// This class tests the capability of the parser against a certain set of tests
     /// </summary>
