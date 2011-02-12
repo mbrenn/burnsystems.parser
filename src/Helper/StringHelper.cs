@@ -16,6 +16,7 @@ namespace BurnSystems.Parser.Helper
     using System.Globalization;
     using System.Web;
     using BurnSystems.Interfaces;
+    using System.Net;
 
     /// <summary>
     /// Diese Hilfsklasse kümmert sich um die allgemeine Verarbeitung von Strings
@@ -48,7 +49,7 @@ namespace BurnSystems.Parser.Helper
                 case "Length":
                     return this.content.Length;
                 case "HtmlEncoded":
-                    return HttpUtility.HtmlEncode(this.content);
+                    return WebUtility.HtmlEncode(this.content);
                 case "UrlEncoded":
                     return HttpUtility.UrlEncode(this.content);
                 case "Nl2Br":
@@ -90,7 +91,7 @@ namespace BurnSystems.Parser.Helper
                     return this.content.Contains(parameters[0].ToString());
             }
 
-            return null;            
+            return null;
         }
     }
 }
