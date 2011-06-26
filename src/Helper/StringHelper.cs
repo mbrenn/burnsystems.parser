@@ -49,7 +49,7 @@ namespace BurnSystems.Parser.Helper
                 case "Length":
                     return this.content.Length;
                 case "HtmlEncoded":
-                    return WebUtility.HtmlEncode(this.content);
+                    return HttpUtility.HtmlEncode(this.content);
                 case "UrlEncoded":
                     return HttpUtility.UrlEncode(this.content);
                 case "Nl2Br":
