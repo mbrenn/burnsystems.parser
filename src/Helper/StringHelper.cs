@@ -89,6 +89,8 @@ namespace BurnSystems.Parser.Helper
                         Convert.ToInt32(parameters[0]));
                 case "Contains":
                     return this.content.Contains(parameters[0].ToString());
+                case "AddSlashes":
+                    return this.content.AddSlashes();
             }
 
             return null;
