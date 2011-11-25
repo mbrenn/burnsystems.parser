@@ -1,4 +1,3 @@
-
 CS_FILES = $(shell find src/ -type f -name *.cs)
 TESTS_CS_FILES = $(shell find tests/ -type f -name *.cs)
 
