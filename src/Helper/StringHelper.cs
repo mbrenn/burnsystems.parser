@@ -49,7 +49,7 @@ namespace BurnSystems.Parser.Helper
                 case "Length":
                     return this.content.Length;
                 case "HtmlEncoded":
-                    return WebUtility.HtmlEncode(this.content);
+                    return HttpUtility.HtmlEncode(this.content);
                 case "UrlEncoded":
                     return HttpUtility.UrlEncode(this.content);
                 case "Nl2Br":
@@ -89,6 +89,8 @@ namespace BurnSystems.Parser.Helper
                         Convert.ToInt32(parameters[0]));
                 case "Contains":
                     return this.content.Contains(parameters[0].ToString());
+                case "AddSlashes":
+                    return this.content.AddSlashes();
             }
 
             return null;
