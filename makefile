@@ -6,9 +6,9 @@ all: build_burnsystems bin/BurnSystems.Parser.dll bin/BurnSystems.Parser.UnitTes
 .PHONY: build_burnsystems
 build_burnsystems:
 	make -C packages/burnsystems
-	mkdir -p packages/bin
 
 packages/bin/BurnSystems.dll: packages/burnsystems/bin/BurnSystems.dll
+	mkdir -p packages/bin
 	cp packages/burnsystems/bin/* packages/bin/
 
 bin/BurnSystems.Parser.dll: $(CS_FILES) packages/bin/BurnSystems.dll
