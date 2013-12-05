@@ -1,12 +1,14 @@
 CS_FILES = $(shell find src/ -type f -name *.cs)
 TESTS_CS_FILES = $(shell find tests/ -type f -name *.cs)
 
-all: packages/bin/BurnSystems.dll bin/BurnSystems.Parser.dll bin/BurnSystems.Parser.UnitTests.dll
+all: build_burnsystems bin/BurnSystems.Parser.dll bin/BurnSystems.Parser.UnitTests.dll
 
-.PHONY: packages/bin/BurnSystems.dll
-packages/bin/BurnSystems.dll:
+.PHONY: build_burnsystems
+build_burnsystems:
 	make -C packages/burnsystems
 	mkdir -p packages/bin
+
+packages/bin/BurnSystems.dll: packages/burnsystems/bin/BurnSystems.dll
 	cp packages/burnsystems/bin/* packages/bin/
 
 bin/BurnSystems.Parser.dll: $(CS_FILES) packages/bin/BurnSystems.dll
