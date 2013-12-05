@@ -3,12 +3,16 @@ TESTS_CS_FILES = $(shell find tests/ -type f -name *.cs)
 
 all: bin/BurnSystems.Parser.dll bin/BurnSystems.Parser.UnitTests.dll
 
-bin/BurnSystems.Parser.dll: $(CS_FILES)
+.PHONY:
+packages/burnsystems/bin/BurnSystems.dll:
+	make -C packages/burnsystems
+
+bin/BurnSystems.Parser.dll: $(CS_FILES) packages/burnsystems/bin/BurnSystems.dll
 	xbuild src/BurnSystems.Parser.csproj
 	mkdir -p bin
 	cp src/bin/Debug/* bin/
 
-bin/BurnSystems.Parser.UnitTests.dll: $(TESTS_CS_FILES)
+bin/BurnSystems.Parser.UnitTests.dll: $(TESTS_CS_FILES) bin/BurnSystems.Parser.dll
 	xbuild tests/BurnSystems.Parser.UnitTests/BurnSystems.Parser.UnitTests.csproj
 	mkdir -p bin
 	cp tests/BurnSystems.Parser.UnitTests/bin/Debug/* bin/
